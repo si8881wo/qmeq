@@ -249,7 +249,7 @@ class BuilderBase(object):
         if not (tleads is None and mulst is None and tlst is None and dlst is None):
             self.leads.change(tleads, mulst, tlst, dlst)
         if not (countingleads is None): #simon
-            self.funcp.countingleads=countingleads
+            self.funcp.countingleads=validate_countingleads(countingleads)
 
     def get_phi0(self, b, bp):
         """
