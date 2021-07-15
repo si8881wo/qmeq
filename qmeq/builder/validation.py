@@ -63,5 +63,9 @@ def validate_indexing(indexing, symmetry, kerntype):
         print("WARNING: For the RTD approach indexing needs to be \'charge\'. " +
               "Using indexing=\'charge\' as a default.")
         indexing = 'charge'
-
     return indexing, symmetry
+
+def validate_countingleads(countingleads): #simon
+    if len(set(countingleads)) != len(countingleads):
+        print('WARNING: The counting field gets attached more than once to at least one lead!')
+    return countingleads

@@ -61,7 +61,9 @@ class FunctionProperties(object):
                  kerntype='2vN', symq=True, norm_row=0, solmethod=None,
                  itype=0, dqawc_limit=10000, mfreeq=False, phi0_init=None,
                  mtype_qd=float, mtype_leads=complex, kpnt=None, dband=None,
-                 off_diag_corrections=True):
+                 off_diag_corrections=True,
+                 countingleads=[0] #simon
+                ):
         self.kerntype = kerntype
         self.symq = symq
         self.norm_row = norm_row
@@ -91,6 +93,8 @@ class FunctionProperties(object):
         self.suppress_wrn = [False]
         #
         self.off_diag_corrections = off_diag_corrections
+        #
+        self.countingleads = countingleads #simon
 
     def print_error(self, exept):
         if not self.suppress_err:
