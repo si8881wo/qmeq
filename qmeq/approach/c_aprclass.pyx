@@ -8,9 +8,6 @@
 
 # Python imports
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import numpy as np
 
 from .aprclass import Approach as ApproachPy
@@ -25,6 +22,7 @@ from ..wrappers.mytypes import complexnp
 cimport numpy as np
 cimport cython
 
+from cython.parallel cimport prange
 from ..wrappers.c_lapack cimport LapackSolverDGESV
 from ..wrappers.c_lapack cimport LapackSolverDGELSD
 
@@ -195,7 +193,7 @@ cdef class Approach:
 
         cdef long_t i, b, bp, bcharge
 
-        for i in range(kh.nelements):
+        for i in prange(kh.nelements, nogil=True):
             b = kh.all_bbp[i, 0]
             bp = kh.all_bbp[i, 1]
             bcharge = kh.all_bbp[i, 2]

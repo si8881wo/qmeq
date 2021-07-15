@@ -1,15 +1,8 @@
-from __future__ import print_function
-
 import os
 import sys
 import numpy as np
 
-try:
-    from setuptools import setup, Extension
-    # print('installing with setuptools')
-except ImportError:
-    from distutils.core import setup, Extension
-    # print('installing with distutils')
+from setuptools import setup, Extension
 
 
 def get_ext_modules():
@@ -30,6 +23,7 @@ def get_ext_modules():
                  'qmeq/approach/base/c_redfield.c',
                  'qmeq/approach/base/c_neumann1.c',
                  'qmeq/approach/base/c_neumann2.c',
+                 'qmeq/approach/base/c_RTD.c',
                  'qmeq/specfunc/c_specfunc.c',
                  # elph
                  'qmeq/approach/elph/c_pauli.c',
@@ -59,11 +53,19 @@ def get_ext_modules():
         # print('using cythonize to generate C files')
 
     ext = []
+    openmp_flag = '-fopenmp' if os.name == 'posix' else '/openmp'
     for file_no_ext in file_list:
         file_base = file_no_ext[:-2]
         file_name = file_base + file_ext
         module_name = file_base.replace('/', '.')
-        ext.append(Extension(module_name, [file_name]))
+        ext.append(
+            Extension(
+                module_name,
+                [file_name],
+                extra_compile_args=[openmp_flag],
+                extra_link_args=[openmp_flag],
+            )
+        )
 
     cext = ext if cythonize is None else cythonize(ext)
     return cext
@@ -79,7 +81,6 @@ classifiers = ['Development Status :: 5 - Production/Stable',
                'Operating System :: POSIX',
                'Operating System :: Unix',
                'Programming Language :: Cython',
-               'Programming Language :: Python :: 2.7',
                'Programming Language :: Python :: 3',
                'Topic :: Scientific/Engineering :: Physics']
 

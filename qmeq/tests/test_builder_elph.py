@@ -1,6 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-
 from numpy import sqrt, exp, pi
 from numpy.linalg import norm
 import itertools
@@ -121,7 +118,7 @@ def save_Builder_double_dot_spinful(fname='data_builder_elph.py'):
         attr = kerntype+str(itype)+str(itype_ph)
         data = data+' '*4+'\''+attr+'current\': '+str(system.current.tolist())+',\n'
         data = data+' '*4+'\''+attr+'energy_current\': '+str(system.energy_current.tolist())
-        data = data + ('\n    }' if kerntype is 'pyLindblad' and itype is 2 and itype_ph is 2 else ',\n' )
+        data = data + ('\n    }' if kerntype == 'pyLindblad' and itype == 2 and itype_ph == 2 else ',\n' )
     #
     with open(fname, 'w') as f:
         f.write(data)
@@ -149,7 +146,7 @@ def test_Builder_elph_double_dot_spinful():
             setattr(calcs, attr, system)
 
             if PRNTQ:
-                print(kerntype, itype)
+                print('kerntype - ', kerntype, 'itype - ', itype, 'repetition - ', i)
                 print('current')
                 print(system.current)
                 print( data[attr+'current'] )
