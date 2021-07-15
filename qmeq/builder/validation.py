@@ -45,3 +45,8 @@ def validate_indexing(indexing, symmetry, kerntype):
         indexing = 'charge'
 
     return indexing
+
+def validate_countingleads(countingleads): #simon
+    if len(set(countingleads)) != len(countingleads):
+        print('WARNING: The counting field gets attached more than once to at least one lead!')
+    return countingleads

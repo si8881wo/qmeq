@@ -12,12 +12,16 @@ class KernelHandler(object):
         self.npauli = si.npauli
         self.phi0 = None
         self.kern = None
+        self.Lpm = None #simon
 
     def set_kern(self, kern):
         self.kern = kern
 
     def set_phi0(self, phi0):
         self.phi0 = phi0
+        
+    def set_lpm(self, Lpm):
+        self.Lpm = Lpm
 
     def is_included(self, b, bp, bcharge):
         bbp = self.si.get_ind_dm0(b, bp, bcharge)
@@ -78,6 +82,11 @@ class KernelHandler(object):
             phi0_imag = self.phi0[bbpi] if bbp_conj else -self.phi0[bbpi]
 
         return phi0_real + 1j*phi0_imag
+    
+    def set_matrix_element_lpm_pauli(self,pfct,pm,aa,bb): #simon
+        self.Lpm[pm,aa,bb] += pfct
+            
+        
 
 class KernelHandlerMatrixFree(KernelHandler):
 
