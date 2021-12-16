@@ -170,6 +170,46 @@ class KernelHandler(object):
     def set_matrix_element_lpm_pauli(self,pfct,pm,aa,bb): #simon
         self.Lpm[pm,aa,bb] += pfct
             
+    def set_matrix_element_lpm(self, fct, pm, b, bp, bcharge, a, ap, acharge):
+        """ Adds a complex value to the matrix element connecting :math:`|a><ap|` and :math:`|b><bp|` in the kernel.
+
+        Parameters
+        ----------
+        fct : complex
+            value to be added
+        b : int
+            first state of :math:`|b><bp|`
+        bp : int
+            second state of :math:`|b><bp|`
+        bcharge : int
+            charge of states b and bp
+        a : int
+            first state of :math:`|a><ap|`
+        ap : int
+            second state of :math:`|a><ap|`
+        acharge : int
+            charge of the states a and ap
+        self.Lpm : ndarray
+            (modifies) the noise kernel
+        """
+        bbp = self.si.get_ind_dm0(b, bp, bcharge)
+        bbpi = self.ndm0 + bbp - self.npauli
+        bbpi_bool = True if bbpi >= self.ndm0 else False
+
+        aap = self.si.get_ind_dm0(a, ap, acharge)
+        aapi = self.ndm0 + aap - self.npauli
+        aap_sgn = +1 if self.si.get_ind_dm0(a, ap, acharge, maptype=3) else -1
+
+        fct_imag = fct.imag
+        fct_real = fct.real
+
+        self.Lpm[pm,bbp, aap] += fct_imag
+        if aapi >= self.ndm0:
+            self.Lpm[pm,bbp, aapi] += fct_real*aap_sgn
+            if bbpi_bool:
+                self.Lpm[pm,bbpi, aapi] += fct_imag*aap_sgn
+        if bbpi_bool:
+            self.Lpm[pm,bbpi, aap] += -fct_real
         
 
 class KernelHandlerMatrixFree(KernelHandler):

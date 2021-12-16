@@ -21,10 +21,22 @@ class ApproachLindblad(Approach):
         Approach.prepare_arrays(self)
         Tba, mtype = self.leads.Tba, self.leads.mtype
         self.tLba = np.zeros(Tba.shape, dtype=mtype)
+        ndm0r = self.si.ndm0r #simon
+        self.Lpm = np.zeros((2, ndm0r, ndm0r), dtype = doublenp) #simon
+        self.kernel_handler.set_lpm(self.Lpm) #simon
+        self.current_noise = np.zeros(2) #simon
+        self.energy_current_noise = np.zeros(1) #simon
+        # create additional vectors/matrices: 1d array with noise at all leads, matrix with derivative (liouvillian/parts)
+        # make sure kernel handler knows where to find new kernel (point to it)
 
     def clean_arrays(self):
         Approach.clean_arrays(self)
         self.tLba.fill(0.0)
+        self.Lpm.fill(0.0) #
+        self.current_noise.fill(0.0) #
+        self.energy_current_noise.fill(0.0) #
+        # create additional vectors/matrices: 1d array with noise at all leads, matrix with derivative (liouvillian/parts)
+
 
     def generate_fct(self):
         """
@@ -55,6 +67,8 @@ class ApproachLindblad(Approach):
         tLba = self.tLba
         si, kh = self.si, self.kernel_handler
         nleads, statesdm = si.nleads, si.statesdm
+        Lpm = self.Lpm #simon
+        countingleads = self.funcp.countingleads #simon
 
         acharge = bcharge-1
         ccharge = bcharge+1
@@ -64,6 +78,8 @@ class ApproachLindblad(Approach):
                 fct_aap = 0
                 for l in range(nleads):
                     fct_aap += tLba[l, b, a]*tLba[l, bp, ap].conjugate()
+                    if l in countingleads:
+                        kh.set_matrix_element_lpm(1j*tLba[l, b, a]*tLba[l, bp, ap].conjugate(), 0, b, bp, bcharge, a, ap, acharge)
                 kh.set_matrix_element(1j*fct_aap, b, bp, bcharge, a, ap, acharge)
         # --------------------------------------------------
         for bpp in statesdm[bcharge]:
@@ -92,10 +108,16 @@ class ApproachLindblad(Approach):
                 fct_ccp = 0
                 for l in range(nleads):
                     fct_ccp += tLba[l, b, c]*tLba[l, bp, cp].conjugate()
+                    if l in countingleads:
+                        kh.set_matrix_element_lpm(1j*tLba[l, b, c]*tLba[l, bp, cp].conjugate(), 1, b, bp, bcharge, c, cp, ccharge)
                 kh.set_matrix_element(1j*fct_ccp, b, bp, bcharge, c, cp, ccharge)
         # --------------------------------------------------
-
+            
     def generate_current(self):
+        self.generate_current_std()
+        self.generate_current_noise()
+        
+    def generate_current_std(self):
         """
         Calculates currents using Lindblad approach.
 
@@ -142,4 +164,42 @@ class ApproachLindblad(Approach):
                     energy_current[l] += energy_current_l.real
 
         self.heat_current[:] = energy_current - current*self.leads.mulst
+            
+    def generate_current_noise(self): #simon
+        """
+        Calculates currents using Pauli master equation approach and noise via the C.Emary approach summed over countingleads passed
+
+        Returns
+        ----------
+        current : float
+            Value of the current attaching the counting field to countingleads.
+        noise : array
+            Value of the current noise attaching the counting field to countingleads.
+        """
+        phi0, E, si = self.phi0, self.qd.Ea, self.si
+        nleads = si.nleads
+        ndm0r, npauli = si.ndm0r, si.npauli
+        kern, Lpm = self.kern, self.Lpm
+        Lp, Lm = self.Lpm
+        
+        # auxilliary quantities
+        # right eigenvector
+        P = phi0[...,None]
+        # left eigenvector
+        O = np.zeros(ndm0r)[None,...]
+        O[0,:npauli].fill(1.0)
+        
+        # projector
+        Q = (np.eye(np.size(P)) - P @ O)
+        # pseudoinverse
+        eps = 1e-4
+        R   = Q @ np.linalg.inv(1j*eps + kern) @ Q 
+        
+        # current and noise
+        Jp  = 1j*Lp - 1j*Lm
+        Jpp = -Lp - Lm
+        c = -1j*(O @ Jp @ P)
+        s = -O @ (Jpp - 2*(Jp @ R @ Jp)) @ P
+        self.current_noise[0] = c.real.item()
+        self.current_noise[1] = s.real.item()
 # ---------------------------------------------------------------------------------------------------

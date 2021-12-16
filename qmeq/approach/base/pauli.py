@@ -168,7 +168,6 @@ class ApproachPauli(Approach):
         phi0, E, si = self.phi0, self.qd.Ea, self.si
         nleads = si.nleads
         kern, Lpm = self.kern, self.Lpm
-        countingleads = self.funcp.countingleads
         Lp, Lm = self.Lpm
         
         # auxilliary quantities
