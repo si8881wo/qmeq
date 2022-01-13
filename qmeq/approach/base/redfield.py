@@ -44,6 +44,8 @@ class ApproachRedfield(Approach):
                 for l in range(nleads):
                     fct_aap += (+ Tba[l, b, a]*Tba[l, ap, bp]*phi1fct[l, bpap, 0].conjugate()
                                 - Tba[l, b, a]*Tba[l, ap, bp]*phi1fct[l, ba, 0])
+                    if l in countingleads:
+                        kh.set_matrix_element_lpm(Tba[l, b, a]*Tba[l, ap, bp]*phi1fct[l, bpap, 0].conjugate() - Tba[l, b, a]*Tba[l, ap, bp]*phi1fct[l, ba, 0], 0, b, bp, bcharge, a, ap, acharge)
                 kh.set_matrix_element(fct_aap, b, bp, bcharge, a, ap, acharge)
         # --------------------------------------------------
         for bpp in statesdm[bcharge]:
@@ -79,10 +81,16 @@ class ApproachRedfield(Approach):
                 for l in range(nleads):
                     fct_ccp += (+ Tba[l, b, c]*Tba[l, cp, bp]*phi1fct[l, cpbp, 1]
                                 - Tba[l, b, c]*Tba[l, cp, bp]*phi1fct[l, cb, 1].conjugate())
+                    if l in countingleads:
+                        kh.set_matrix_element_lpm(Tba[l, b, c]*Tba[l, cp, bp]*phi1fct[l, cpbp, 1] - Tba[l, b, c]*Tba[l, cp, bp]*phi1fct[l, cb, 1].conjugate(), 1, b, bp, bcharge, c, cp, ccharge)
                 kh.set_matrix_element(fct_ccp, b, bp, bcharge, c, cp, ccharge)
         # --------------------------------------------------
-
+           
     def generate_current(self):
+        self.generate_current_std()
+        self.generate_current_noise()
+        
+    def generate_current_std(self):
         E, Tba = self.qd.Ea, self.leads.Tba
         phi1fct, phi1fct_energy = self.phi1fct, self.phi1fct_energy
 
@@ -133,4 +141,42 @@ class ApproachRedfield(Approach):
                     energy_current[l] += -2*energy_current_l.imag
 
         self.heat_current[:] = energy_current - current*self.leads.mulst
+                            
+    def generate_current_noise(self): #simon
+        """
+        Calculates currents using Pauli master equation approach and noise via the C.Emary approach summed over countingleads passed
+
+        Returns
+        ----------
+        current : float
+            Value of the current attaching the counting field to countingleads.
+        noise : array
+            Value of the current noise attaching the counting field to countingleads.
+        """
+        phi0, E, si = self.phi0, self.qd.Ea, self.si
+        nleads = si.nleads
+        ndm0r, npauli = si.ndm0r, si.npauli
+        kern, Lpm = self.kern, self.Lpm
+        Lp, Lm = self.Lpm
+        
+        # auxilliary quantities
+        # right eigenvector
+        P = phi0[...,None]
+        # left eigenvector
+        O = np.zeros(ndm0r)[None,...]
+        O[0,:npauli].fill(1.0)
+        
+        # projector
+        Q = (np.eye(np.size(P)) - P @ O)
+        # pseudoinverse
+        eps = 1e-4
+        R   = Q @ np.linalg.inv(1j*eps + kern) @ Q 
+        
+        # current and noise
+        Jp  = 1j*Lp - 1j*Lm
+        Jpp = -Lp - Lm
+        c = -1j*(O @ Jp @ P)
+        s = -O @ (Jpp - 2*(Jp @ R @ Jp)) @ P
+        self.current_noise[0] = c.real.item()
+        self.current_noise[1] = s.real.item()
 # ---------------------------------------------------------------------------------------------------
