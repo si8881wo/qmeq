@@ -31,6 +31,8 @@ class ApproachRedfield(Approach):
         Tba, phi1fct = self.leads.Tba, self.phi1fct
         si, kh = self.si, self.kernel_handler
         nleads, statesdm = si.nleads, si.statesdm
+        Lpm = self.Lpm #simon
+        countingleads = self.funcp.countingleads #simon
 
         acharge = bcharge-1
         ccharge = bcharge+1
