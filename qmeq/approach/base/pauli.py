@@ -178,7 +178,7 @@ class ApproachPauli(Approach):
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
         # pseudoinverse
-        eps = 1e-4
+        eps = 1e-10
         R   = Q @ np.linalg.inv(1j*eps*np.eye(np.size(P)) + kern) @ Q 
         
         # current and noise
