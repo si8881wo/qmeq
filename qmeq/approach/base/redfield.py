@@ -18,6 +18,12 @@ class ApproachRedfield(Approach):
 
     kerntype = 'pyRedfield'
 
+    def restart(self): # simon
+        Approach.restart(self)
+        self.Lpm = None
+        self.current_noise = None
+        self.energy_current_noise = None
+
     def prepare_arrays(self):
         Approach1vN.prepare_arrays(self)
 

@@ -17,6 +17,12 @@ class ApproachLindblad(Approach):
 
     kerntype = 'pyLindblad'
 
+    def restart(self): # simon
+        Approach.restart(self)
+        self.Lpm = None
+        self.current_noise = None
+        self.energy_current_noise = None
+
     def prepare_arrays(self):
         Approach.prepare_arrays(self)
         Tba, mtype = self.leads.Tba, self.leads.mtype

@@ -17,6 +17,12 @@ class ApproachPauli(Approach):
     
     def get_kern_size(self):
         return self.si.npauli
+        
+    def restart(self): # simon
+        Approach.restart(self)
+        self.Lpm = None
+        self.current_noise = None
+        self.energy_current_noise = None
 
     def prepare_arrays(self):
         Approach.prepare_arrays(self)

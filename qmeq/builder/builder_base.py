@@ -67,7 +67,7 @@ attribute_map = dict(
     solve='appr', current='appr', energy_current='appr',
     heat_current='appr', phi0='appr', phi1='appr', niter='appr',
     iters='appr', kern='appr', success='appr', make_kern_copy='appr',
-    current_noise = 'appr', energy_current_noise = 'appr', Lpm = 'appr', current_sum_leads = 'appr', countingleads = 'funcp',# added by Simon #simon
+    current_noise = 'appr', countingleads = 'funcp',# added by Simon #simon
     # FunctionProperties
     kpnt='funcp', symq='appr', norm_row='appr', solmethod='appr',
     itype='appr', dqawc_limit='funcp',
