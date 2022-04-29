@@ -107,7 +107,7 @@ class ApproachPauli(Approach):
                 fctm -= paulifct[l, ba, 1]
                 fctp += paulifct[l, ba, 0]
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_pauli(paulifct[l, ba, 1],1,aa,bb)  #simon
+                    kh.set_matrix_element_lpm_pauli(paulifct[l, ba, 0],1,bb,aa)  #simon
             kh.set_matrix_element_pauli(fctm, fctp, bb, aa)
         for c in statesdm[ccharge]:
             cc = si.get_ind_dm0(c, c, ccharge)
@@ -117,7 +117,7 @@ class ApproachPauli(Approach):
                 fctm -= paulifct[l, cb, 0]
                 fctp += paulifct[l, cb, 1]
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_pauli(paulifct[l, cb, 0],0,cc,bb) #simon
+                    kh.set_matrix_element_lpm_pauli(paulifct[l, cb, 1],0,bb,cc) #simon
             kh.set_matrix_element_pauli(fctm, fctp, bb, cc)
 
             
@@ -174,7 +174,7 @@ class ApproachPauli(Approach):
         phi0, E, si = self.phi0, self.qd.Ea, self.si
         nleads = si.nleads
         kern, Lpm = self.kern, self.Lpm
-        Lp, Lm = self.Lpm
+        Lm, Lp = self.Lpm
         
         # auxilliary quantities
         # right eigenvector

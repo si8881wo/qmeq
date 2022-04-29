@@ -167,8 +167,8 @@ class KernelHandler(object):
 
         return phi0_real + 1j*phi0_imag
     
-    def set_matrix_element_lpm_pauli(self,pfct,pm,aa,bb): #simon
-        self.Lpm[pm,aa,bb] += pfct
+    def set_matrix_element_lpm_pauli(self,pfct,pm,bb,aa): #simon
+        self.Lpm[pm,bb,aa] += pfct
             
     def set_matrix_element_lpm(self, fct, pm, b, bp, bcharge, a, ap, acharge):
         """ Adds a complex value to the matrix element connecting :math:`|a><ap|` and :math:`|b><bp|` in the kernel.
@@ -303,7 +303,10 @@ class KernelHandlerMatrixFree(KernelHandler):
 
 class KernelHandlerRTD(KernelHandler):
     """Class used for inserting matrix elements into the matrices used in the RTD approach."""
-
+    
+    def set_jdot(self, Jdot):
+        self.Jdot = Jdot
+        
     def set_matrix_list(self):
         self.mats = [self.Wdd, self.WE1, self.WE2, self.ReWdn, self.ImWdn, self.ReWnd, self.ImWnd, self.Lnn]
 

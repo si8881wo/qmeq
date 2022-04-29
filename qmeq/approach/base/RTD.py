@@ -43,6 +43,10 @@ class ApproachPyRTD(Approach):
         self.ReWdn = None
         self.ImWdn = None
         self.Lnn = None
+        
+        self.Lpm = None
+        self.current_noise = None
+        self.Jdot = None
 
     def prepare_kernel_handler(self):
         self.kernel_handler = KernelHandlerRTD(self.si)
@@ -58,6 +62,12 @@ class ApproachPyRTD(Approach):
         self.Wdd = np.zeros((nleads, kern_size, kern_size), dtype=self.dtype)
         self.WE1 = np.zeros((nleads, kern_size, kern_size), dtype=self.dtype)
         self.WE2 = np.zeros((nleads, kern_size, kern_size), dtype=self.dtype)
+        
+        self.Lpm = np.zeros((4, kern_size, kern_size), dtype = self.dtype) #simon
+        self.kernel_handler.set_lpm(self.Lpm) #simon
+        self.Jdot = np.zeros((kern_size, kern_size), dtype = self.dtype) #simon
+        self.kernel_handler.set_jdot(self.Jdot) #simon
+        self.current_noise = np.zeros(2) #simon
 
         kh = self.kernel_handler
         kh.Wdd = self.Wdd
@@ -95,6 +105,10 @@ class ApproachPyRTD(Approach):
         self.WE2.fill(0.0)
         self.W2.fill(0.0)
         self.LE.fill(0.0)
+        
+        self.Lpm.fill(0.0)
+        self.Jdot.fill(0.0)
+        self.current_noise.fill(0.0)
 
         if self.off_diag_corrections:
             self.ReWnd.fill(0.0)
@@ -130,7 +144,7 @@ class ApproachPyRTD(Approach):
                 if not kh.is_unique(b, b, bcharge):
                     continue
                 self.generate_row_1st_order_kernel(b, bcharge)
-                self.generate_col_diag_kern_2nd_order(b, bcharge)
+                #self.generate_col_diag_kern_2nd_order(b, bcharge)
                 self.generate_row_1st_energy_kernel(b, bcharge)
                 self.generate_row_2nd_energy_kernel(b, bcharge)
 
@@ -190,8 +204,12 @@ class ApproachPyRTD(Approach):
                 if self.si.get_ind_dm0(a, a, charge, 2):
                     charge_lst.append(2 * charge)
         self.LN = np.array(charge_lst)
-
+            
     def generate_current(self):
+        self.generate_current_std()
+        self.generate_current_noise()
+        
+    def generate_current_std(self):
         r""" Calculates currents for the RTD approach.
 
         Charge current for reservoir r is evaluated as :math:`I^r = 1/2 \cdot Tr (L_{N_{dot}}^+ W^r \phi_0)`
@@ -289,6 +307,8 @@ class ApproachPyRTD(Approach):
         paulifct = self.paulifct
         si, kh = self.si, self.kernel_handler
         nleads, statesdm = si.nleads, si.statesdm
+        Lpm = self.Lpm #simon
+        countingleads = self.funcp.countingleads #simon
 
         acharge = bcharge-1
         ccharge = bcharge+1
@@ -301,6 +321,8 @@ class ApproachPyRTD(Approach):
                 fctm = -paulifct[l, ba, 1]
                 fctp = paulifct[l, ba, 0]
                 kh.set_matrix_element_dd(l, fctm, fctp, bb, aa, 0)
+                if l in countingleads:
+                    kh.set_matrix_element_lpm_pauli(fctp,1,bb,aa)
         for c in statesdm[ccharge]:
             cc = si.get_ind_dm0(c, c, ccharge)
             cb = si.get_ind_dm1(c, b, bcharge)
@@ -308,6 +330,8 @@ class ApproachPyRTD(Approach):
                 fctm = -paulifct[l, cb, 0]
                 fctp = paulifct[l, cb, 1]
                 kh.set_matrix_element_dd(l, fctm, fctp, bb, cc, 0)
+                if l in countingleads:
+                    kh.set_matrix_element_lpm_pauli(fctp,0,bb,cc) #simon
 
     def generate_row_1st_energy_kernel(self, b, bcharge):
         r""" Generates a row of the first kernel for the barrier part of the energy current :math:`W_{E,1}`. This kernel
@@ -936,3 +960,38 @@ class ApproachPyRTD(Approach):
     def generate_vec(self, phi0):
         """"""
         raise NotImplementedError('Matrix free methods are not supported by the RTD approach.')
+        
+    def generate_current_noise(self): #simon
+        """
+        Calculates currents using Pauli master equation approach and noise via the C.Emary approach summed over countingleads passed
+
+        Returns
+        ----------
+        current : float
+            Value of the current attaching the counting field to countingleads.
+        noise : array
+            Value of the current noise attaching the counting field to countingleads.
+        """
+        phi0, E, si = self.phi0, self.qd.Ea, self.si
+        nleads = si.nleads
+        kern, Lpm = self.kern, self.Lpm
+        Lm, Lp = self.Lpm[0:2]
+        
+        # auxilliary quantities
+        # right eigenvector
+        P = phi0[...,None]
+        # left eigenvector
+        O = np.ones(np.size(P))[None,...]
+        # projector
+        Q = (np.eye(np.size(P)) - P @ O)
+        # pseudoinverse
+        eps = 1e-10
+        R   = Q @ np.linalg.inv(1j*eps*np.eye(np.size(P)) + kern) @ Q 
+        
+        # current and noise
+        Jp  = 1j*Lp - 1j*Lm
+        Jpp = -Lp - Lm
+        c = -1j*(O @ Jp @ P)
+        s = -O @ (Jpp - 2*(Jp @ R @ Jp)) @ P
+        self.current_noise[0] = c.real.item()
+        self.current_noise[1] = s.real.item()
