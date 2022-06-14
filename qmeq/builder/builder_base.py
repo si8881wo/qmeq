@@ -98,7 +98,7 @@ class BuilderBase(object):
                  itype=0, dqawc_limit=10000, mfreeq=False, phi0_init=None,
                  mtype_qd=complex, mtype_leads=complex,
                  symmetry=None, herm_hs=True, herm_c=False, m_less_n=True
-                ,countingleads=[0] #simon
+                ,countingleads=[0], off_diag_corrections=True #simon
                 ):
 
         self._init_copy_data(locals())
