@@ -466,7 +466,7 @@ class KernelHandlerRTD(KernelHandler):
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Lpm[8, indx3, indx1] += -fct
 
-    def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, dx, dot):
+    def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx, dot):
         """
         Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
         between second order diagrams in the RTD approach to add the value to four places in the matrices.
@@ -494,6 +494,10 @@ class KernelHandlerRTD(KernelHandler):
             keldysh index
         p2 : int
             keldysh index
+        r0 : int
+            1 if lead index r0 in counting leads 0 otherwise
+        r1 : int
+            1 if lead index r1 in counting leads 0 otherwise
         dx : string
             indicates if direct or exchange integral
         dot : bool
@@ -507,15 +511,15 @@ class KernelHandlerRTD(KernelHandler):
         
         # calculate counting indices
         if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
-            cind0 = (1 - 1)/2 + eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = (1 + 1)/2 + eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = (-1 - 1)/2 + eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = (-1 + 1)/2 + eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=1
+            cind0 = r0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
+            cind1 = r0 * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=1
+            cind2 = r0 * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=1
+            cind3 = r0 * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=1
         elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
-            cind0 = eta1 * (p1 - 1)/2 + (1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = eta1 * (p1 + 1)/2 + (1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = eta1 * (p1 - 1)/2 + (-1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = eta1 * (p1 + 1)/2 + (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
+            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * (1 - p2)/2 # p0=1,p3=1, eta0=1
+            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
+            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
+            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
         
         # dict for mapping counting indices to correct Lpm matrix
         if not dot:
@@ -533,7 +537,7 @@ class KernelHandlerRTD(KernelHandler):
             self.Lpm[cind[cind1], indx3, indx0] += -fct
         # Flipping right-most vertex p0 = -p0
         if cind2 != 0.:
-            print(cind2,cind[cind2],fct, indx4, indx1,'third',dx,p1,p2,eta1)
+            #print(cind2,cind[cind2],fct, indx4, indx1,'third',dx,p1,p2,eta1)
             self.Lpm[cind[cind2], indx4, indx1] += fct
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         if cind3 != 0.:
