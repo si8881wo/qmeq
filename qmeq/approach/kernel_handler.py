@@ -422,7 +422,7 @@ class KernelHandlerRTD(KernelHandler):
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Wdd[r, indx3, indx1] += -fct
 
-    def add_element_2nd_order_noise_dot(self, fct, indx0, indx1, a3, charge3, a4, charge4):
+    def add_element_2nd_order_noise_dot(self, fct_, indx0, indx1, a3, charge3, a4, charge4):
         """
         Adds a value to the lead-resolved kernel for the diagonal density matrix. Uses symmetries
         between second order diagrams in the RTD approach to add the value to four places in the matrix.
@@ -454,16 +454,16 @@ class KernelHandlerRTD(KernelHandler):
         indx3 = si.get_ind_dm0(a3, a3, charge3)
         indx4 = si.get_ind_dm0(a4, a4, charge4)
 
-        fct = 2 * fct
-        self.Lpm[8, indx4, indx0] += fct
+        fct = 2 * fct_
+        self.Lpm[10, indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
-        self.Lpm[8, indx3, indx0] += -fct
+        self.Lpm[10, indx3, indx0] += -fct
         # Flipping right-most vertex p0 = -p0
-        self.Lpm[8, indx4, indx1] += fct
+        self.Lpm[10, indx4, indx1] += fct
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        self.Lpm[8, indx3, indx1] += -fct
+        self.Lpm[10, indx3, indx1] += -fct
 
-    def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx, dot):
+    def add_element_2nd_order_noise(self, fct_, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx, dot):
         """
         Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
         between second order diagrams in the RTD approach to add the value to four places in the matrices.
@@ -520,26 +520,18 @@ class KernelHandlerRTD(KernelHandler):
         
         # dict for mapping counting indices to correct Lpm matrix
         if not dot:
-            cind=dict([(-1.,0),(1.,1),(-2.,2),(2.,3)])
+            cind=dict([(0,0),(-1.,1),(1.,2),(-2.,3),(2.,4)])
         elif dot:
-            cind=dict([(-1.,4),(1.,5),(-2.,6),(2.,7)])
+            cind=dict([(0,5),(-1.,6),(1.,7),(-2.,8),(2.,9)])
     
-        fct = 2 * fct
-        if cind0 != 0.:
-            #print(cind0,cind[cind0],fct, indx4, indx0,'first',dx)
-            self.Lpm[cind[cind0], indx4, indx0] += fct
+        fct = 2 * fct_
+        self.Lpm[cind[cind0], indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
-        if cind1 != 0.:
-            #print(cind1,cind[cind1],fct, indx3, indx0,'second',dx)
-            self.Lpm[cind[cind1], indx3, indx0] += -fct
+        self.Lpm[cind[cind1], indx3, indx0] += -fct
         # Flipping right-most vertex p0 = -p0
-        if cind2 != 0.:
-            #print(cind2,cind[cind2],fct, indx4, indx1,'third',dx,p1,p2,eta1)
-            self.Lpm[cind[cind2], indx4, indx1] += fct
+        self.Lpm[cind[cind2], indx4, indx1] += fct
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        if cind3 != 0.:
-            #print(cind3,cind[cind3],fct, indx3, indx1,'fourth',dx)
-            self.Lpm[cind[cind3], indx3, indx1] += -fct
+        self.Lpm[cind[cind3], indx3, indx1] += -fct
 
     def add_element_Lnn(self, a1, b1, charge, fct):
         """
