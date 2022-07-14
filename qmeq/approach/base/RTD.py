@@ -63,7 +63,7 @@ class ApproachPyRTD(Approach):
         self.WE1 = np.zeros((nleads, kern_size, kern_size), dtype=self.dtype)
         self.WE2 = np.zeros((nleads, kern_size, kern_size), dtype=self.dtype)
         
-        self.Lpm = np.zeros((2*5+1, kern_size, kern_size), dtype = complexnp) #simon
+        self.Lpm = np.zeros((2*5, kern_size, kern_size), dtype = complexnp) #simon
         self.kernel_handler.set_lpm(self.Lpm) #simon
         self.current_noise = np.zeros(2) #simon
 
@@ -133,7 +133,7 @@ class ApproachPyRTD(Approach):
         ncharge, statesdm = si.ncharge, si.statesdm
         self.off_diag_corrections = self.funcp.off_diag_corrections
 
-        if (not np.all(np.isclose(self.leads.tlst, self.leads.tlst[0]))) or np.any(abs(self.leads.Tba.imag)>0):
+        if True:#(not np.all(np.isclose(self.leads.tlst, self.leads.tlst[0]))) or np.any(abs(self.leads.Tba.imag)>0):
             self.set_Ozaki_params()
 
         for bcharge in range(ncharge):
@@ -526,8 +526,8 @@ class ApproachPyRTD(Approach):
         t_cutoff2 = 1e-10*max(tlst)
         t_cutoff3 = 1e-20*max(tlst)**2
         indx0 = self.si.get_ind_dm0(a0, a0, charge)
-        eps = 1e-6
-        h = 1e-6
+        #eps = 0.0
+        h = 1e-2
         for r0, r1 in product(range(nleads), range(nleads)):
             r0_c, r1_c = int(r0 in countingleads), int(r1 in countingleads)
             T1, T2 = tlst[r0], tlst[r1]
@@ -556,23 +556,19 @@ class ApproachPyRTD(Approach):
                         t2X = t1 * Tba[r0, a2p, a3p].conj() * Tba[r1, a3p, a0].conj()
                         E3 = E[a3p] - E[a0]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a3p, charge + 1, a0, charge)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'d')
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a3p, charge + 1, a0, charge)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a3p, charge + 1, a0, charge,1,1,1,r0_c, r1_c,'x')
                     #p2 = -1
                     #N3 = ( N0 +1, N0 + 2)
                     for a3m in statesdm[charge+1]:
@@ -581,23 +577,19 @@ class ApproachPyRTD(Approach):
                         t2X = t1 * Tba[r0, a3m, a0].conj() * Tba[r1, a2p, a3m].conj()
                         E3 = E[a2p] - E[a3m]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a2p, charge + 2, a3m, charge + 1)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'d')
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a2p, charge + 2, a3m, charge+1)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a2p, charge + 2, a3m, charge + 1,1,1,-1,r0_c, r1_c,'x')
                 #p1 = -1
                 #N2 = ( N0 - 1, N0 + 1 ), a2+ = a1+
                 for a2m in statesdm[charge-1]:
@@ -613,23 +605,19 @@ class ApproachPyRTD(Approach):
                         t2X = t1 * Tba[r0, a1p, a3p].conj() * Tba[r1, a3p, a2m].conj()
                         E3 = E[a3p] - E[a2m]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(-1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(-1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(-1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(-1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(-1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(-1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a3p, charge, a2m, charge - 1)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'d')
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(-1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(-1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(-1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(-1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(-1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(-1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a3p, charge, a2m, charge-1)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a3p, charge, a2m, charge - 1,1,-1,1,r0_c, r1_c,'x')
                     #p2 = -1
                     #N3 = ( N0 , N0 + 1), a3+ = a2+
                     for a3m in statesdm[charge]:
@@ -638,23 +626,19 @@ class ApproachPyRTD(Approach):
                         t2X = t1 * Tba[r0, a3m, a2m].conj() * Tba[r1, a1p, a3m].conj()
                         E3 = E[a1p] - E[a3m]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(-1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(-1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(-1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(-1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(-1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(-1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a1p, charge + 1, a3m, charge)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'d')
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(-1, 1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(-1, 1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(-1, 1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(-1, 1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(-1, 1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(-1, 1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(-1, 1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a1p, charge + 1, a3m, charge)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a1p, charge + 1, a3m, charge,1,-1,-1,r0_c, r1_c,'x')
                 #eta1 = -1
                 #p1 = 1
                 #N2 = (N0, N0), a2- = a0
@@ -670,28 +654,24 @@ class ApproachPyRTD(Approach):
                         t2D = t1 * Tba[r1, a3p, a2p] * Tba[r0, a3p, a0].conj()
                         E3 = E[a3p] - E[a0]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a3p, charge + 1, a0, charge)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a3p, charge + 1, a0, charge,-1,1,1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a3p, charge + 1, a0, charge,-1,1,1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a3p, charge + 1, a0, charge,-1,1,1,r0_c, r1_c,'d')
                     #N3 = (N0, N0-1), a3- = a0
                     for a3p in statesdm[charge-1]:
                         #charge4 = charge, a4 = a0
                         t2X = t1 * Tba[r0, a2p, a3p].conj() * Tba[r1, a0, a3p]
                         E3 = E[a3p] - E[a0]
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a3p, charge - 1, a0, charge)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a3p, charge - 1, a0, charge,-1,1,1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a3p, charge - 1, a0, charge,-1,1,1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a3p, charge - 1, a0, charge,-1,1,1,r0_c, r1_c,'x')
                     #p2 = -1
                     #N3 = ( N0-1, N0 ), a3+ = a2+
                     for a3m in statesdm[charge-1]:
@@ -699,27 +679,24 @@ class ApproachPyRTD(Approach):
                         t2D = t1 * Tba[r1, a0, a3m] * Tba[r0, a2p, a3m].conj()
                         E3 = E[a2p] - E[a3m]
                         if abs(t2D) > t_cutoff3:
-                            tempD_dotp = t2D * integralD(1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a2p, charge, a3m, charge - 1)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a2p, charge, a3m, charge - 1,-1,1,-1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a2p, charge, a3m, charge - 1,-1,1,-1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a2p, charge, a3m, charge - 1,-1,1,-1,r0_c, r1_c,'d')
                     #N3 = (N0 + 1, N0)
                     for a3m in statesdm[charge+1]:
                         #charge4 = charge + 1, a4 = a3m
                         t2X = t1 * Tba[r0, a3m, a0].conj() * Tba[r1, a3m, a2p]
                         E3 = E[a2p] - E[a3m]
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a2p, charge, a3m, charge + 1)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a2p, charge, a3m, charge + 1,-1,1,-1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a2p, charge, a3m, charge + 1,-1,1,-1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a2p, charge, a3m, charge + 1,-1,1,-1,r0_c, r1_c,'x')
                 #p1 = -1
                 #N2 = ( N0 + 1  , N0 + 1), a2+ = a1+
                 for a2m in statesdm[charge+1]:
@@ -732,28 +709,24 @@ class ApproachPyRTD(Approach):
                         t2D = t1 * Tba[r1, a3p, a1p] * Tba[r0, a3p, a2m].conj()
                         E3 = E[a3p] - E[a2m]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(-1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(-1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(-1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(-1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(-1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(-1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a3p, charge + 2, a2m, charge + 1)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a3p, charge + 2, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a3p, charge + 2, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a3p, charge + 2, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'d')
                     #N3 = ( N0 + 1, N0 )
                     for a3p in statesdm[charge]:
                         #charge4 = charge + 1, a4 = a2m
                         t2X = t1 * Tba[r0, a1p, a3p].conj() * Tba[r1, a2m, a3p]
                         E3 = E[a3p] - E[a2m]
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(-1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(-1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(-1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(-1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(-1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(-1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a3p, charge, a2m, charge + 1)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a3p, charge, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a3p, charge, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a3p, charge, a2m, charge + 1,-1,-1,1,r0_c, r1_c,'x')
                     #p2 = -1
                     #N3 = ( N0, N0+1), a3+ = a2+
                     for a3m in statesdm[charge]:
@@ -761,28 +734,24 @@ class ApproachPyRTD(Approach):
                         t2D = t1 * Tba[r1, a2m, a3m] * Tba[r0, a1p, a3m].conj()
                         E3 = E[a1p] - E[a3m]
                         if abs(t2D) > t_cutoff3:
-                            tempD = t2D * integralD(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp = t2D * integralD(-1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotp_ = t2D * integralD(-1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm = t2D * integralD(-1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
-                            tempD_dotm_ = t2D * integralD(-1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2D.imag)>t_cutoff3)
+                            tempD = t2D * integralD(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotp = t2D * integralD(-1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempD_dotm = t2D * integralD(-1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a1p, charge + 1, a3m, charge)
                             kh.add_element_2nd_order_noise(tempD, indx0, indx1, a1p, charge + 1, a3m, charge,-1,-1,-1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot((tempD_dotp_-tempD_dotp)/h, (tempD_dotm_-tempD_dotm)/h, indx0, indx1, a1p, charge + 1, a3m, charge,-1,-1,-1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot((tempD_dotp-tempD)/h, (tempD_dotm-tempD)/h, indx0, indx1, a1p, charge + 1, a3m, charge,-1,-1,-1,r0_c, r1_c,'d')
                     #N3 = ( N0 + 2, N0 + 1 ), a3+ = a2+
                     for a3m in statesdm[charge+2]:
                         #charge4 = charge + 2, a4 = a3m
                         t2X = t1 * Tba[r0, a3m, a2m].conj() * Tba[r1, a3m, a1p]
                         E3 = E[a1p] - E[a3m]
                         if abs(t2X) > t_cutoff3:
-                            tempX = -t2X * integralX(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp = -t2X * integralX(-1, -1, E1-eps, E2-eps, E3-eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotp_ = -t2X * integralX(-1, -1, E1-eps-h, E2-eps-h, E3-eps-h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm = -t2X * integralX(-1, -1, E1+eps, E2+eps, E3+eps, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
-                            tempX_dotm_ = -t2X * integralX(-1, -1, E1+eps+h, E2+eps+h, E3+eps+h, T1, T2, mu1, mu2, D, b_and_R, abs(t2X.imag)>t_cutoff3)
+                            tempX = -t2X * integralX(-1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotp = -t2X * integralX(-1, -1, E1-h, E2-h, E3-h, T1, T2, mu1, mu2, D, b_and_R, True)
+                            tempX_dotm = -t2X * integralX(-1, -1, E1+h, E2+h, E3+h, T1, T2, mu1, mu2, D, b_and_R, True)
                             kh.add_element_2nd_order(r1, tempX.real, indx0, indx1, a1p, charge + 1, a3m, charge + 2)
                             kh.add_element_2nd_order_noise(tempX, indx0, indx1, a1p, charge + 1, a3m, charge + 2,-1,-1,-1,r0_c, r1_c,'x')
-                            kh.add_element_2nd_order_noise_dot((tempX_dotp_-tempX_dotp)/h, (tempX_dotm_-tempX_dotm)/h, indx0, indx1, a1p, charge + 1, a3m, charge + 2,-1,-1,-1,r0_c, r1_c,'x')
+                            kh.add_element_2nd_order_noise_dot((tempX_dotp-tempX)/h, (tempX_dotm-tempX)/h, indx0, indx1, a1p, charge + 1, a3m, charge + 2,-1,-1,-1,r0_c, r1_c,'x')
 
     def generate_col_nondiag_kern_1st_order_dn(self, a1, b1, charge):
         r""" Calculates a column in :math:`W_{dn}^{(1)}`, the part of the full first order off-diagonal kernel
