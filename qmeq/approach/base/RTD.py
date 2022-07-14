@@ -278,7 +278,7 @@ class ApproachPyRTD(Approach):
 
         itype = self.funcp.itype
         paulifct = self.paulifct
-        paulifct_dot = self.paulifct_dot
+        #paulifct_dot = self.paulifct_dot
         for charge in range(ncharge-1):
             ccharge = charge+1
             bcharge = charge
@@ -291,9 +291,9 @@ class ApproachPyRTD(Approach):
                     rez = func_pauli(Ecb, mulst[l], tlst[l], dlst[l, 0], dlst[l, 1], itype)
                     paulifct[l, cb, 0] = xcb*rez[0]
                     paulifct[l, cb, 1] = xcb*rez[1]
-                    rez_dot = func_pauli(Ecb+eps, mulst[l], tlst[l], dlst[l, 0], dlst[l, 1], itype)
-                    paulifct_dot[l, cb, 0] = xcb*rez_dot[0]
-                    paulifct_dot[l, cb, 1] = xcb*rez_dot[1]
+                    #rez_dot = func_pauli(Ecb+eps, mulst[l], tlst[l], dlst[l, 0], dlst[l, 1], itype)
+                    #paulifct_dot[l, cb, 0] = xcb*rez_dot[0]
+                    #paulifct_dot[l, cb, 1] = xcb*rez_dot[1]
 
     def generate_row_1st_order_kernel(self, b, bcharge):
         """Generates a row in the first order diagonal kernel :math:`W_{dd}^{(1)}`.
@@ -311,7 +311,7 @@ class ApproachPyRTD(Approach):
             has npauli * npauli entries.
         """
         paulifct = self.paulifct
-        paulifct_dot = self.paulifct_dot
+        #paulifct_dot = self.paulifct_dot
         si, kh = self.si, self.kernel_handler
         nleads, statesdm = si.nleads, si.statesdm
         Lpm = self.Lpm #simon
@@ -327,8 +327,8 @@ class ApproachPyRTD(Approach):
             for l in range(nleads):
                 fctm = -paulifct[l, ba, 1]
                 fctp = paulifct[l, ba, 0]
-                fctm_dot = -paulifct_dot[l, ba, 1]
-                fctp_dot = paulifct_dot[l, ba, 0]
+                #fctm_dot = -paulifct_dot[l, ba, 1]
+                #fctp_dot = paulifct_dot[l, ba, 0]
                 kh.set_matrix_element_dd(l, fctm, fctp, bb, aa, 0)
                 #kh.set_matrix_element_lpm_pauli(fctm_dot,8,bb,bb)
                 #kh.set_matrix_element_lpm_pauli(fctp_dot,8,bb,aa)
@@ -341,8 +341,8 @@ class ApproachPyRTD(Approach):
             for l in range(nleads):
                 fctm = -paulifct[l, cb, 0]
                 fctp = paulifct[l, cb, 1]
-                fctm_dot = -paulifct_dot[l, cb, 0]
-                fctp_dot = paulifct_dot[l, cb, 1]
+                #fctm_dot = -paulifct_dot[l, cb, 0]
+                #fctp_dot = paulifct_dot[l, cb, 1]
                 kh.set_matrix_element_dd(l, fctm, fctp, bb, cc, 0)
                 #kh.set_matrix_element_lpm_pauli(fctm_dot,8,bb,bb)
                 #kh.set_matrix_element_lpm_pauli(fctp_dot,8,bb,cc)
@@ -1117,7 +1117,7 @@ class ApproachPyRTD(Approach):
         Jdotp = 1j*(Lp1p - Lm1p + 2*Lp2p - 2*Lm2p)#(1j*(Lp1p - Lm1p + 2*Lp2p - 2*Lm2p)-Jp)/eps
         # current and noise
         c = -1j*(O @ Jp @ P)
-        s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c * (O @ (-1j*Jdotp - (Jp @ R @ (-1j*Jdot))) @ P) 
+        s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c * (O @ (-1j*Jdotp - (Jp @ R @ (-1j*Jdot))) @ P)
         #print('S_m = ',-O @ (Jpp - 2*(Jp @ R @ Jp)) @ P)
         #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
         self.current_noise[0] = c.real.item()

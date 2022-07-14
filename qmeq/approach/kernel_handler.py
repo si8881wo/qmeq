@@ -303,9 +303,6 @@ class KernelHandlerMatrixFree(KernelHandler):
 
 class KernelHandlerRTD(KernelHandler):
     """Class used for inserting matrix elements into the matrices used in the RTD approach."""
-    
-    def set_jdot(self, Jdot):
-        self.Jdot = Jdot
         
     def set_matrix_list(self):
         self.mats = [self.Wdd, self.WE1, self.WE2, self.ReWdn, self.ImWdn, self.ReWnd, self.ImWnd, self.Lnn]
