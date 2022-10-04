@@ -455,7 +455,6 @@ def polygamma(U, K):
 
     return H
 
-
 def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
     of evaluating the integral based on the temperatures. Assumes that the wide band limits is valid.
@@ -493,16 +492,64 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     double
         The integral value
     """
-    TMIN = 1e-5
-    if abs(T2-T1) < TMIN and not ImGamma:
-        lambda1 = (E1 - mu1) / T1
-        lambda2 = (E2 - mu1 - eta1 * mu2) / T1
-        lambda3 = (E3 - mu1) /T1
-        ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        return ret*np.pi/T1
-    else:
-        ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
-        return -1j*ret
+    # TMIN = 1e-5
+    # if abs(T2-T1) < TMIN and not ImGamma:
+        # lambda1 = (E1 - mu1) / T1
+        # lambda2 = (E2 - mu1 - eta1 * mu2) / T1
+        # lambda3 = (E3 - mu1) /T1
+        # ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        # return ret*np.pi/T1
+    # else:
+    ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
+    return -1j*ret
+        
+def integralD_Lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
+    """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
+    of evaluating the integral based on the temperatures. Assumes that the wide band limits is valid.
+
+    Parameters
+    ----------
+    p1 : float/int
+        Keldysh index of right-most operator
+    eta1 : float
+        electron-hole index
+    E1 : float
+        Energy difference (E1+ - E1-).
+    E2 : float
+        Energy difference (E2+ - E2-).
+    E3 : float
+        Energy difference (E3+ - E3-).
+    T1 : float
+        Temperature of lead 1
+    T2 : float
+        Temperature of lead 2
+    mu1 : float
+        Chemical potential of lead 1
+    mu2 : float
+        Chemical potential of lead 2
+    Dp : float
+        Bandwidth (positive energy) over temperature
+    Dm : float
+        Bandwidth (negative energy) over temperature
+    b_and_R : ndarray
+        2xN ndarray containing 1/b in the first row and R in the second row. b and R are the poles and residues
+        of the Ozaki expansion of tanh(z), respectively.
+
+    Returns
+    -------
+    double
+        The integral value
+    """
+    # TMIN = 1e-5
+    # if abs(T2-T1) < TMIN and not ImGamma:
+        # lambda1 = (E1 - eta0 * mu1) / T1
+        # lambda2 = (E2 - eta0 * mu1 - eta1 * mu2) / T1
+        # lambda3 = (E3 - eta0 * mu1) /T1
+        # ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        # return ret*np.pi/T1
+    # else:
+    ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0*mu1, eta1*mu2, D/2, D/2, b_and_R)
+    return -1j*ret
 
 def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
@@ -542,17 +589,65 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         The integral value
     """
 
-    TMIN = 1e-10
-    if abs(T2-T1) < TMIN and not ImGamma:
-        lambda1 = (E1 - mu1) / T1
-        lambda2 = (E2 - mu1 - eta1 * mu2) / T1
-        lambda3 = (E3 - eta1*mu2) / T1
-        ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        return ret*np.pi/T1
-    else:
-        ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
-        return -1j*ret
+    # TMIN = 1e-10
+    # if abs(T2-T1) < TMIN and not ImGamma:
+        # lambda1 = (E1 - mu1) / T1
+        # lambda2 = (E2 - mu1 - eta1 * mu2) / T1
+        # lambda3 = (E3 - eta1*mu2) / T1
+        # ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        # return ret*np.pi/T1
+    # else:
+    ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
+    return -1j*ret
 
+def integralX_Lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
+    """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
+    of evaluating the integral based on the temperatures. Assumes that the wide band limit is valid.
+
+    Parameters
+    ----------
+    p1 : float/int
+        Keldysh index of right-most operator
+    eta1 : float
+        electron-hole index
+    E1 : float
+        Energy difference (E1+ - E1-).
+    E2 : float
+        Energy difference (E2+ - E2-).
+    E3 : float
+        Energy difference (E3+ - E3-).
+    T1 : float
+        Temperature of lead 1
+    T2 : float
+        Temperature of lead 2
+    mu1 : float
+        Chemical potential of lead 1
+    mu2 : float
+        Chemical potential of lead 2
+    Dp : float
+        Bandwidth (positive energy) over temperature
+    Dm : float
+        Bandwidth (negative energy) over temperature
+    b_and_R : ndarray
+        2xN ndarray containing 1/b in the first row and R in the second row. b and R are the poles and residues
+        of the Ozaki expansion of tanh(z), respectively.
+
+    Returns
+    -------
+    double
+        The integral value
+    """
+
+    # TMIN = 1e-10
+    # if abs(T2-T1) < TMIN and not ImGamma:
+        # lambda1 = (E1 - eta0 * mu1) / T1
+        # lambda2 = (E2 - eta0 * mu1 - eta1 * mu2) / T1
+        # lambda3 = (E3 - eta1 * mu2) / T1
+        # ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        # return ret*np.pi/T1
+    # else:
+    ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0 * mu1, eta1*mu2, D/2, D/2, b_and_R)
+    return -1j*ret
 
 def _D_integral_equal_T(p1, p2, E1, deltaE, E2, Dp, Dm):
     """
@@ -851,3 +946,17 @@ def BW_Ozaki(D):
 
     b_and_R = Ozaki(N * 2 + 2)
     return b_and_R
+    
+def pre(p,Na2p,Na2m):
+    """ Calculates prefactor +- in the G operators for the Tab for use in the counting statistics without exploiting the mirror symmetry.
+    
+    Parameters
+    ----------
+    p : float/int
+        Keldysh index
+    Na2p : int
+        charge of state a_2+
+    Na2m : int
+        charge of state a_2-
+    """
+    return p**(1+Na2p-Na2m)
