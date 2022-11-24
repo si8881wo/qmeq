@@ -50,6 +50,36 @@ def func_pauli(Ecb, mu, T, Dm, Dp, itype):
         rez = np.zeros(2)
     return rez
 
+def fermi_lpm(lam, mu, T, Dm, Dp, itype):
+    """
+    Function used when generating lpm master equation kernel.
+
+    Parameters
+    ----------
+    Ecb : float
+        Energy.
+    mu : float
+        Chemical potential.
+    T : float
+        Temperature.
+    Dm,Dp : float
+        Bandwidth.
+    itype : int
+        Type of function calculation.
+
+    Returns
+    -------
+    float
+        | rez - particle current amplitude.
+    """
+    alpha = (lam)/T
+    Rm, Rp = (Dm-mu)/T, (Dp-mu)/T
+    if itype == 1 or itype == 3 or (Rm < alpha < Rp):
+        rez = 2*pi*fermi_func(alpha)
+    else:
+        rez = 0
+    return rez
+
 
 def func_1vN(Ecb, mu, T, Dm, Dp, itype, limit):
     """
@@ -264,9 +294,34 @@ def phi(x, Dp, Dm, sign=1):
     double
         real part of the function value
     """
-    Z = 0.5 + x / (2 * np.pi) * 1j
+    Z = 0.5 + x / (2 * pi) * 1j
     ret = sign * (-digamma(Z).real + log(0.5*(abs(Dp)+abs(Dm))/(2.0*pi)))
     return ret
+    
+@lru_cache(MAX_CACHE)
+def phi_lpm(x, Dp, Dm, sign=1):
+    """
+    Calculates the phi function, i.e. eq. C4 in PRB 78, 235424, 2008.
+
+    Parameters
+    ----------
+    x : float
+        Energy.
+    Dp : float
+        Bandwidth (positive energy) over temperature
+    Dm : float
+        Bandwidth (negative energy) over temperature
+    sign : int
+        Sign factor to be multiplied with the function
+
+    Returns
+    -------
+    double
+        real part of the function value
+    """
+    Z = 0.5 + x / (2 * pi * 1j)
+    ret = sign * (digamma(Z) + digamma(-Z) - log(0.5*(abs(Dp)+abs(Dm))/(2.0*pi)))/2
+    return ret.real
 
 @lru_cache(MAX_CACHE)
 def diff_phi(x, sign=1):
@@ -503,7 +558,7 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
     return -1j*ret
         
-def integralD_Lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
+def integralD_lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
     of evaluating the integral based on the temperatures. Assumes that the wide band limits is valid.
 
@@ -600,7 +655,7 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
     return -1j*ret
 
-def integralX_Lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
+def integralX_lpm(p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
     of evaluating the integral based on the temperatures. Assumes that the wide band limit is valid.
 
