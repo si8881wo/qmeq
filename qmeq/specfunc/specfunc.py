@@ -547,16 +547,16 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     double
         The integral value
     """
-    # TMIN = 1e-5
-    # if abs(T2-T1) < TMIN and not ImGamma:
-        # lambda1 = (E1 - mu1) / T1
-        # lambda2 = (E2 - mu1 - eta1 * mu2) / T1
-        # lambda3 = (E3 - mu1) /T1
-        # ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        # return ret*np.pi/T1
-    # else:
-    ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
-    return -1j*ret
+    TMIN = 1e-5
+    if abs(T2-T1) < TMIN and not ImGamma:
+        lambda1 = (E1 - mu1) / T1
+        lambda2 = (E2 - mu1 - eta1 * mu2) / T1
+        lambda3 = (E3 - mu1) /T1
+        ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        return ret*np.pi/T1
+    else:
+        ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
+        return -1j*ret
         
 def integralD_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
@@ -647,16 +647,16 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         The integral value
     """
 
-    # TMIN = 1e-10
-    # if abs(T2-T1) < TMIN and not ImGamma:
-        # lambda1 = (E1 - mu1) / T1
-        # lambda2 = (E2 - mu1 - eta1 * mu2) / T1
-        # lambda3 = (E3 - eta1*mu2) / T1
-        # ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        # return ret*np.pi/T1
-    # else:
-    ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
-    return -1j*ret
+    TMIN = 1e-10
+    if abs(T2-T1) < TMIN and not ImGamma:
+        lambda1 = (E1 - mu1) / T1
+        lambda2 = (E2 - mu1 - eta1 * mu2) / T1
+        lambda3 = (E3 - eta1*mu2) / T1
+        ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
+        return ret*np.pi/T1
+    else:
+        ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
+        return -1j*ret
 
 def integralX_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
