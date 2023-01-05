@@ -4,17 +4,17 @@
 def validate_kerntype(kerntype):
     if isinstance(kerntype, str):
         if kerntype not in {'Pauli', 'Lindblad', 'Redfield', '1vN', '2vN', 'pyPauli',
-                    'pyLindblad', 'pyRedfield', 'py1vN', 'py2vN', 'pyRTD', 'RTD'}:
+                    'pyLindblad', 'pyRedfield', 'py1vN', 'py2vN', 'pyRTD', 'RTD','pyRTDnoise'}:
             print("WARNING: Allowed kerntype values are: " +
                   "\'Pauli\', \'Lindblad\', \'Redfield\', \'1vN\', \'2vN\', " +
-                  "\'pyPauli\', \'pyLindblad\', \'pyRedfield\', \'py1vN\', \'py2vN\', \'RTD\'. " +
+                  "\'pyPauli\', \'pyLindblad\', \'pyRedfield\', \'py1vN\', \'py2vN\', \'RTD\', \'pyRTDnoise\'. " +
                   "Using default kerntype=\'Pauli\'.")
             kerntype = 'Pauli'
     return kerntype
 
 
 def validate_itype(itype, kerntype):
-    if kerntype not in ('RTD', 'pyRTD'):
+    if kerntype not in ('RTD', 'pyRTD','pyRTDnoise'):
         if itype not in {0, 1, 2, 3}:
             print("WARNING: itype needs to be 0, 1, 2, or 3. Using default itype=0.")
             itype = 0

@@ -35,6 +35,7 @@ from ..approach.base.redfield import ApproachRedfield as ApproachPyRedfield
 from ..approach.base.neumann1 import Approach1vN as ApproachPy1vN
 from ..approach.base.neumann2 import Approach2vN as ApproachPy2vN
 from ..approach.base.RTD import ApproachPyRTD as ApproachPyRTD
+from ..approach.base.RTDnoise import ApproachPyRTDnoise as ApproachPyRTDnoise
 
 # Cython compiled modules
 
@@ -45,6 +46,7 @@ try:
     from ..approach.base.c_neumann1 import Approach1vN
     from ..approach.base.c_neumann2 import Approach2vN
     from ..approach.base.c_RTD import ApproachRTD
+    from ..approach.base.c_RTDnoise import ApproachRTDnoise
 except ImportError as ie:
     print("WARNING: Cannot import Cython compiled modules for the approaches (builder_base.py).")
     ApproachPauli = ApproachPyPauli
@@ -53,6 +55,7 @@ except ImportError as ie:
     Approach1vN = ApproachPy1vN
     Approach2vN = ApproachPy2vN
     ApproachRTD = ApproachPyRTD
+    ApproachRTDnoise = ApproachPyRTDnoise
 # -----------------------------------------------------------
 
 attribute_map = dict(
