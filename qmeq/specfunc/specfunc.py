@@ -319,9 +319,10 @@ def phi_lpm(x, Dp, Dm, sign=1):
     double
         real part of the function value
     """
-    Z = 0.5 + x / (2 * pi * 1j)
-    ret = sign * (digamma(Z) + digamma(-Z) - log(0.5*(abs(Dp)+abs(Dm))/(2.0*pi)))/2
-    return ret.real
+    Zp = 0.5 - x / (2 * pi) * 1j
+    Zm = 0.5 + x / (2 * pi) * 1j
+    ret = sign * ((digamma(Zm) + digamma(Zp))/2 - log(0.5*(abs(Dp)+abs(Dm))/(2.0*pi)))
+    return ret
 
 @lru_cache(MAX_CACHE)
 def diff_phi(x, sign=1):
@@ -548,7 +549,7 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         The integral value
     """
     TMIN = 1e-5
-    if abs(T2-T1) < TMIN and not ImGamma:
+    if False:#abs(T2-T1) < TMIN and not ImGamma:
         lambda1 = (E1 - mu1) / T1
         lambda2 = (E2 - mu1 - eta1 * mu2) / T1
         lambda3 = (E3 - mu1) /T1
@@ -557,7 +558,7 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     else:
         ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, mu1, eta1*mu2, D/2, D/2, b_and_R)
         return -1j*ret
-        
+
 def integralD_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
     of evaluating the integral based on the temperatures. Assumes that the wide band limits is valid.
@@ -607,7 +608,7 @@ def integralD_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu
     if lpm_imaginary_2nd:
         return -1j*ret
     else:
-        return-1j*ret.imag
+        return -1j*ret.imag
 
 def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
@@ -648,7 +649,7 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """
 
     TMIN = 1e-10
-    if abs(T2-T1) < TMIN and not ImGamma:
+    if False:#abs(T2-T1) < TMIN and not ImGamma:
         lambda1 = (E1 - mu1) / T1
         lambda2 = (E2 - mu1 - eta1 * mu2) / T1
         lambda3 = (E3 - eta1*mu2) / T1
@@ -704,7 +705,7 @@ def integralX_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu
         # ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
         # return ret*np.pi/T1
     # else:
-    ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0 * mu1, eta1*mu2, D/2, D/2, b_and_R)
+    ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0*mu1, eta1*mu2, D/2, D/2, b_and_R)
     if lpm_imaginary_2nd:
         return -1j*ret
     else:
@@ -1007,10 +1008,10 @@ def BW_Ozaki(D):
 
     b_and_R = Ozaki(N * 2 + 2)
     return b_and_R
-    
+
 # def pre(p,Na2p,Na2m):
     # """ Calculates prefactor +- in the G operators for the Tab for use in the counting statistics without exploiting the mirror symmetry.
-    
+
     # Parameters
     # ----------
     # p : float/int

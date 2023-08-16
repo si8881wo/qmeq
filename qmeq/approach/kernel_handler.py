@@ -17,7 +17,7 @@ class KernelHandler(object):
 
     def set_phi0(self, phi0):
         self.phi0 = phi0
-        
+
     def set_lpm(self, Lpm):
         self.Lpm = Lpm
 
@@ -166,10 +166,10 @@ class KernelHandler(object):
             phi0_imag = self.phi0[bbpi] if bbp_conj else -self.phi0[bbpi]
 
         return phi0_real + 1j*phi0_imag
-    
+
     def set_matrix_element_lpm_pauli(self,pfct,pm,bb,aa): #simon
         self.Lpm[pm,bb,aa] += pfct
-            
+
     def set_matrix_element_lpm(self, fct, pm, b, bp, bcharge, a, ap, acharge):
         """ Adds a complex value to the matrix element connecting :math:`|a><ap|` and :math:`|b><bp|` in the kernel.
 
@@ -210,7 +210,6 @@ class KernelHandler(object):
                 self.Lpm[pm,bbpi, aapi] += fct_imag*aap_sgn
         if bbpi_bool:
             self.Lpm[pm,bbpi, aap] += -fct_real
-        
 
 class KernelHandlerMatrixFree(KernelHandler):
     """Class used for inserting matrix elements into vectors when using the matrix free
@@ -303,7 +302,7 @@ class KernelHandlerMatrixFree(KernelHandler):
 
 class KernelHandlerRTD(KernelHandler):
     """Class used for inserting matrix elements into the matrices used in the RTD approach."""
-        
+
     def set_matrix_list(self):
         self.mats = [self.Wdd, self.WE1, self.WE2, self.ReWdn, self.ImWdn, self.ReWnd, self.ImWnd, self.Lnn]
 
@@ -422,278 +421,6 @@ class KernelHandlerRTD(KernelHandler):
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Wdd[r, indx3, indx1] += -fct
 
-    def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
-        """
-        Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
-        between second order diagrams in the RTD approach to add the value to four places in the matrices.
-
-
-        Parameters
-        ----------
-        fct : float
-            value to be added
-        indx0 : int
-            index for inital state
-        indx1 : int
-            index for intermidiate state 1
-        a3 : int
-            intermediate state 3 is given by :math:`|a3><a3|`
-        charge3 : int
-            charge of intermediate state 3
-        a4 : int
-            final state is given by :math:`|a4><a4|`
-        charge4 : int
-            charge of the final state
-        eta1 : int
-            electron-hole index
-        p1 : int
-            keldysh index
-        p2 : int
-            keldysh index
-        r0 : int
-            1 if lead index r0 in counting leads 0 otherwise
-        r1 : int
-            1 if lead index r1 in counting leads 0 otherwise
-        dx : string
-            indicates if direct or exchange integral
-        dot : bool
-            indicate if energy shifted version for derivative Jprimedot
-        self.Wdd : ndarray
-            (Modifies) the lead-resolved kernel for the diagonal density matrix.
-        """
-        si = self.si
-        indx3 = si.get_ind_dm0(a3, a3, charge3)
-        indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
-        # calculate counting indices
-        if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
-            cind0 = r0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r0 * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r0 * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r0 * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
-            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * (1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
-        # dict for mapping counting indices to correct Lpm matrix
-        cind=dict([(0,0),(-1.,1),(1.,2),(-2.,3),(2.,4)])
-    
-        #fct = fct+fct.conjugate()
-        self.Lpm[cind[cind0], indx4, indx0] += fct
-        # Flipping left-most vertex p3 = -p3
-        self.Lpm[cind[cind1], indx3, indx0] += -fct
-        # Flipping right-most vertex p0 = -p0
-        self.Lpm[cind[cind2], indx4, indx1] += fct
-        # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        self.Lpm[cind[cind3], indx3, indx1] += -fct
-
-    def add_element_2nd_order_noise_dot(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta0, eta1, p1, p2, r0, r1, dx):
-        """
-        Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
-        between second order diagrams in the RTD approach to add the value to four places in the matrices.
-
-
-        Parameters
-        ----------
-        fct : float
-            value to be added
-        indx0 : int
-            index for inital state
-        indx1 : int
-            index for intermidiate state 1
-        a3 : int
-            intermediate state 3 is given by :math:`|a3><a3|`
-        charge3 : int
-            charge of intermediate state 3
-        a4 : int
-            final state is given by :math:`|a4><a4|`
-        charge4 : int
-            charge of the final state
-        eta1 : int
-            electron-hole index
-        p1 : int
-            keldysh index
-        p2 : int
-            keldysh index
-        r0 : int
-            1 if lead index r0 in counting leads 0 otherwise
-        r1 : int
-            1 if lead index r1 in counting leads 0 otherwise
-        dx : string
-            indicates if direct or exchange integral
-        dot : bool
-            indicate if energy shifted version for derivative Jprimedot
-        self.Wdd : ndarray
-            (Modifies) the lead-resolved kernel for the diagonal density matrix.
-        """
-        si = self.si
-        indx3 = si.get_ind_dm0(a3, a3, charge3)
-        indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
-        # calculate counting indices
-        if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
-            cind0 = r0 * eta0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r0 * eta0 * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r0 * eta0 * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r0 * eta0 * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
-            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
-        # dict for mapping counting indices to correct Lpm matrix
-        cind=dict([(0,5),(-1.,6),(1.,7),(-2.,8),(2.,9)])
-    
-        #fct = fctp + fctm.conjugate()
-        self.Lpm[cind[cind0], indx4, indx0] += fct
-        # Flipping left-most vertex p3 = -p3
-        self.Lpm[cind[cind1], indx3, indx0] += -fct
-        # Flipping right-most vertex p0 = -p0
-        self.Lpm[cind[cind2], indx4, indx1] += fct
-        # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        self.Lpm[cind[cind3], indx3, indx1] += -fct
-        
-    def add_element_2nd_order_noise_dot_2(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta0, eta1, p1, p2, r0, r1, dx):
-        """
-        Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
-        between second order diagrams in the RTD approach to add the value to four places in the matrices.
-
-
-        Parameters
-        ----------
-        fct : float
-            value to be added
-        indx0 : int
-            index for inital state
-        indx1 : int
-            index for intermidiate state 1
-        a3 : int
-            intermediate state 3 is given by :math:`|a3><a3|`
-        charge3 : int
-            charge of intermediate state 3
-        a4 : int
-            final state is given by :math:`|a4><a4|`
-        charge4 : int
-            charge of the final state
-        eta1 : int
-            electron-hole index (note: different sign convention in emary, i.e. eta=-xi)
-        p1 : int
-            keldysh index
-        p2 : int
-            keldysh index
-        r0 : int
-            1 if lead index r0 in counting leads 0 otherwise
-        r1 : int
-            1 if lead index r1 in counting leads 0 otherwise
-        dx : string
-            indicates if direct or exchange integral
-        dot : bool
-            indicate if energy shifted version for derivative Jprimedot
-        self.Wdd : ndarray
-            (Modifies) the lead-resolved kernel for the diagonal density matrix.
-        """
-        si = self.si
-        indx3 = si.get_ind_dm0(a3, a3, charge3)
-        indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
-        # calculate counting indices
-        if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
-            cind0 = r0 * eta0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r0 * eta0 * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r0 * eta0 * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r0 * eta0 * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
-            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=1, eta0=1
-            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
-            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
-            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
-        # dict for mapping counting indices to correct Lpm matrix
-        cind=dict([(0,10),(-1.,11),(1.,12),(-2.,13),(2.,14)])
-    
-        #fct = fctp + fctm.conjugate()
-        self.Lpm[cind[cind0], indx4, indx0] += fct
-        # Flipping left-most vertex p3 = -p3
-        self.Lpm[cind[cind1], indx3, indx0] += -fct
-        # Flipping right-most vertex p0 = -p0
-        self.Lpm[cind[cind2], indx4, indx1] += fct
-        # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        self.Lpm[cind[cind3], indx3, indx1] += -fct
-        
-  
-
-    
-
-    def add_element_2nd_order_noise_m(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
-        """
-        Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
-        between second order diagrams in the RTD approach to add the value to four places in the matrices.
-
-
-        Parameters
-        ----------
-        fct : float
-            value to be added
-        indx0 : int
-            index for inital state
-        indx1 : int
-            index for intermidiate state 1
-        a3 : int
-            intermediate state 3 is given by :math:`|a3><a3|`
-        charge3 : int
-            charge of intermediate state 3
-        a4 : int
-            final state is given by :math:`|a4><a4|`
-        charge4 : int
-            charge of the final state
-        eta1 : int
-            electron-hole index (note: different sign convention in emary, i.e. eta=-xi)
-        p1 : int
-            keldysh index
-        p2 : int
-            keldysh index
-        r0 : int
-            1 if lead index r0 in counting leads 0 otherwise
-        r1 : int
-            1 if lead index r1 in counting leads 0 otherwise
-        dx : string
-            indicates if direct or exchange integral
-        dot : bool
-            indicate if energy shifted version for derivative Jprimedot
-        self.Wdd : ndarray
-            (Modifies) the lead-resolved kernel for the diagonal density matrix.
-        """
-        si = self.si
-        indx3 = si.get_ind_dm0(a3, a3, charge3)
-        indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
-        # calculate counting indices
-        if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
-            cind0 = r0 * (-1) * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=-1
-            cind1 = r0 * (-1) * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=-1
-            cind2 = r0 * (-1) * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=-1
-            cind3 = r0 * (-1) * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=-1
-        elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
-            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1) * (1 - p2)/2 # p0=1,p3=1, eta0=-1
-            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (1 - p2)/2 # p0=1,p3=-1, eta0=-1
-            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=1, eta0=-1
-            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=-1, eta0=-1
-        
-        # dict for mapping counting indices to correct Lpm matrix
-        cind=dict([(0,0),(-1.,1),(1.,2),(-2.,3),(2.,4)])
-    
-        #fct = fct+fct.conjugate()
-        self.Lpm[cind[cind0], indx4, indx0] += fct
-        # Flipping left-most vertex p3 = -p3
-        self.Lpm[cind[cind1], indx3, indx0] += -fct
-        # Flipping right-most vertex p0 = -p0
-        self.Lpm[cind[cind2], indx4, indx1] += fct
-        # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
-        self.Lpm[cind[cind3], indx3, indx1] += -fct
-
     def add_element_Lnn(self, a1, b1, charge, fct):
         """
         Adds a value to the part of :math:`L_{N,+}` connecting an off-diagonal component of the density matrix to
@@ -716,9 +443,53 @@ class KernelHandlerRTD(KernelHandler):
         if a1 > b1:
             indx += self.ndm0 - self.npauli
         self.Lnn[indx, indx] += fct
+
 class KernelHandlerRTDnoise(KernelHandlerRTD):
     """Class used for inserting matrix elements into the matrices used in the RTD noise approach."""
 
+    def set_matrix_element_lpm_pauli(self,pfct,pm,bb,aa): #simon
+        self.Lpm[pm,bb,aa] += pfct
+
+    def set_matrix_element_lpm(self, fct, pm, b, bp, bcharge, a, ap, acharge):
+        """ Adds a complex value to the matrix element connecting :math:`|a><ap|` and :math:`|b><bp|` in the kernel.
+
+        Parameters
+        ----------
+        fct : complex
+            value to be added
+        b : int
+            first state of :math:`|b><bp|`
+        bp : int
+            second state of :math:`|b><bp|`
+        bcharge : int
+            charge of states b and bp
+        a : int
+            first state of :math:`|a><ap|`
+        ap : int
+            second state of :math:`|a><ap|`
+        acharge : int
+            charge of the states a and ap
+        self.Lpm : ndarray
+            (modifies) the noise kernel
+        """
+        bbp = self.si.get_ind_dm0(b, bp, bcharge)
+        bbpi = self.ndm0 + bbp - self.npauli
+        bbpi_bool = True if bbpi >= self.ndm0 else False
+
+        aap = self.si.get_ind_dm0(a, ap, acharge)
+        aapi = self.ndm0 + aap - self.npauli
+        aap_sgn = +1 if self.si.get_ind_dm0(a, ap, acharge, maptype=3) else -1
+
+        fct_imag = fct.imag
+        fct_real = fct.real
+
+        self.Lpm[pm,bbp, aap] += fct_imag
+        if aapi >= self.ndm0:
+            self.Lpm[pm,bbp, aapi] += fct_real*aap_sgn
+            if bbpi_bool:
+                self.Lpm[pm,bbpi, aapi] += fct_imag*aap_sgn
+        if bbpi_bool:
+            self.Lpm[pm,bbpi, aap] += -fct_real
 
     def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
         """
@@ -762,7 +533,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         si = self.si
         indx3 = si.get_ind_dm0(a3, a3, charge3)
         indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
+
         # calculate counting indices
         if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
             cind0 = r0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
@@ -774,10 +545,10 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
             cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
             cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
             cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
+
         # dict for mapping counting indices to correct Lpm matrix
         cind=dict([(0,0),(-1.,1),(1.,2),(-2.,3),(2.,4)])
-    
+
         #fct = fct+fct.conjugate()
         self.Lpm[cind[cind0], indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
@@ -829,7 +600,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         si = self.si
         indx3 = si.get_ind_dm0(a3, a3, charge3)
         indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
+
         # calculate counting indices
         if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
             cind0 = r0 * eta0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
@@ -841,10 +612,10 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
             cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
             cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
             cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
+
         # dict for mapping counting indices to correct Lpm matrix
         cind=dict([(0,5),(-1.,6),(1.,7),(-2.,8),(2.,9)])
-    
+
         #fct = fctp + fctm.conjugate()
         self.Lpm[cind[cind0], indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
@@ -853,7 +624,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         self.Lpm[cind[cind2], indx4, indx1] += fct
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Lpm[cind[cind3], indx3, indx1] += -fct
-        
+
     def add_element_2nd_order_noise_dot_2(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta0, eta1, p1, p2, r0, r1, dx):
         """
         Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
@@ -896,7 +667,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         si = self.si
         indx3 = si.get_ind_dm0(a3, a3, charge3)
         indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
+
         # calculate counting indices
         if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
             cind0 = r0 * eta0 * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=1
@@ -908,10 +679,10 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
             cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (1 - p2)/2 # p0=1,p3=-1, eta0=1
             cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=1, eta0=1
             cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * eta0 * (-1 - p2)/2 # p0=-1,p3=-1, eta0=1
-        
+
         # dict for mapping counting indices to correct Lpm matrix
         cind=dict([(0,10),(-1.,11),(1.,12),(-2.,13),(2.,14)])
-    
+
         #fct = fctp + fctm.conjugate()
         self.Lpm[cind[cind0], indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
@@ -920,7 +691,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         self.Lpm[cind[cind2], indx4, indx1] += fct
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Lpm[cind[cind3], indx3, indx1] += -fct
-    
+
     def add_element_2nd_order_noise_m(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
         """
         Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
@@ -963,7 +734,7 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         si = self.si
         indx3 = si.get_ind_dm0(a3, a3, charge3)
         indx4 = si.get_ind_dm0(a4, a4, charge4)
-        
+
         # calculate counting indices
         if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
             cind0 = r0 * (-1) * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=-1
@@ -975,10 +746,10 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
             cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (1 - p2)/2 # p0=1,p3=-1, eta0=-1
             cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=1, eta0=-1
             cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=-1, eta0=-1
-        
+
         # dict for mapping counting indices to correct Lpm matrix
         cind=dict([(0,0),(-1.,1),(1.,2),(-2.,3),(2.,4)])
-    
+
         #fct = fct+fct.conjugate()
         self.Lpm[cind[cind0], indx4, indx0] += fct
         # Flipping left-most vertex p3 = -p3
@@ -988,3 +759,68 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Lpm[cind[cind3], indx3, indx1] += -fct
 
+    def add_element_2nd_order_noise_m_dot(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta0, eta1, p1, p2, r0, r1, dx):
+        """
+        Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
+        between second order diagrams in the RTD approach to add the value to four places in the matrices.
+
+
+        Parameters
+        ----------
+        fct : float
+            value to be added
+        indx0 : int
+            index for inital state
+        indx1 : int
+            index for intermidiate state 1
+        a3 : int
+            intermediate state 3 is given by :math:`|a3><a3|`
+        charge3 : int
+            charge of intermediate state 3
+        a4 : int
+            final state is given by :math:`|a4><a4|`
+        charge4 : int
+            charge of the final state
+        eta1 : int
+            electron-hole index
+        p1 : int
+            keldysh index
+        p2 : int
+            keldysh index
+        r0 : int
+            1 if lead index r0 in counting leads 0 otherwise
+        r1 : int
+            1 if lead index r1 in counting leads 0 otherwise
+        dx : string
+            indicates if direct or exchange integral
+        dot : bool
+            indicate if energy shifted version for derivative Jprimedot
+        self.Wdd : ndarray
+            (Modifies) the lead-resolved kernel for the diagonal density matrix.
+        """
+        si = self.si
+        indx3 = si.get_ind_dm0(a3, a3, charge3)
+        indx4 = si.get_ind_dm0(a4, a4, charge4)
+
+        # calculate counting indices
+        if dx == 'd': # eta0 * (p0 - p3)/2 + eta1 * (p1 - p2)/2
+            cind0 = r0 * (-1) * (1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=1, eta0=-1
+            cind1 = r0 * (-1) * (1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=1,p3=-1, eta0=-1
+            cind2 = r0 * (-1) * (-1 - 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=1, eta0=-1
+            cind3 = r0 * (-1) * (-1 + 1)/2 + r1 * eta1 * (p1 - p2)/2 # p0=-1,p3=-1, eta0=-1
+        elif dx == 'x': # eta1 * (p1 - p3)/2 + eta0 * (p0 - p2)/2
+            cind0 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1) * (1 - p2)/2 # p0=1,p3=1, eta0=-1
+            cind1 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (1 - p2)/2 # p0=1,p3=-1, eta0=-1
+            cind2 = r1 * eta1 * (p1 - 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=1, eta0=-1
+            cind3 = r1 * eta1 * (p1 + 1)/2 + r0 * (-1) * (-1 - p2)/2 # p0=-1,p3=-1, eta0=-1
+        # dict for mapping counting indices to correct Lpm matrix
+        cind=dict([(0,5),(-1.,6),(1.,7),(-2.,8),(2.,9)])
+
+        #fct = fctp + fctm.conjugate()
+        self.Lpm[cind[cind0], indx4, indx0] += fct
+        # Flipping left-most vertex p3 = -p3
+        self.Lpm[cind[cind1], indx3, indx0] += -fct
+        # Flipping right-most vertex p0 = -p0
+        self.Lpm[cind[cind2], indx4, indx1] += fct
+        # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
+        self.Lpm[cind[cind3], indx3, indx1] += -fct
