@@ -30,7 +30,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.lpm_h = 1e-4
+        self.lpm_h = 1e-10
 
     def restart(self):
         ApproachPyRTD.restart(self)
@@ -263,8 +263,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
         # pseudoinverse
-        eps = h
-        R = Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
+        eps = 1e-6
+        R = Q @ np.linalg.pinv(kern) @ Q # Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
         # derivatives of noise kernel
         Jp = 1j*(Lp1 - Lm1 + 2*Lp2 - 2*Lm2)
         Jpp = -Lp1 - Lm1 - 4*Lp2 - 4*Lm2

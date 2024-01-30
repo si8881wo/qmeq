@@ -549,7 +549,7 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         The integral value
     """
     TMIN = 1e-5
-    if False:#abs(T2-T1) < TMIN and not ImGamma:
+    if abs(T2-T1) < TMIN and not ImGamma:
         lambda1 = (E1 - mu1) / T1
         lambda2 = (E2 - mu1 - eta1 * mu2) / T1
         lambda3 = (E3 - mu1) /T1
@@ -649,7 +649,7 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
     """
 
     TMIN = 1e-10
-    if False:#abs(T2-T1) < TMIN and not ImGamma:
+    if abs(T2-T1) < TMIN and not ImGamma:
         lambda1 = (E1 - mu1) / T1
         lambda2 = (E2 - mu1 - eta1 * mu2) / T1
         lambda3 = (E3 - eta1*mu2) / T1
