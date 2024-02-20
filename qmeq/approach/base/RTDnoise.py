@@ -168,7 +168,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                     self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
 
         kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Wdd, 0)
+        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5], 0)
 
         if self.off_diag_corrections:
             for bcharge in range(ncharge):
@@ -207,31 +207,31 @@ class ApproachPyRTDnoise(ApproachPyRTD):
             for b in statesdm[bcharge]:
                 if not kh.is_unique(b, b, bcharge):
                     continue
-                self.generate_row_1st_order_kernel(b, bcharge)
+                #self.generate_row_1st_order_kernel(b, bcharge)
                 self.generate_row_1st_order_kernel_lpm(b, bcharge)#simon
-                self.generate_col_diag_kern_2nd_order(b, bcharge)
+                #self.generate_col_diag_kern_2nd_order(b, bcharge)
                 self.generate_col_diag_kern_2nd_order_lpm(b, bcharge)
-                self.generate_row_1st_energy_kernel(b, bcharge)
-                self.generate_row_2nd_energy_kernel(b, bcharge)
+                #self.generate_row_1st_energy_kernel(b, bcharge)
+                #self.generate_row_2nd_energy_kernel(b, bcharge)
 
-                if self.off_diag_corrections:
-                    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
+                #if self.off_diag_corrections:
+                #    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
 
         kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Wdd, 0)
+        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5].real, 0)
 
-        if self.off_diag_corrections:
-            for bcharge in range(ncharge):
-                for b in statesdm[bcharge]:
-                    for bp in statesdm[bcharge]:
-                        if b == bp:
-                            continue
-                        self.generate_col_nondiag_kern_1st_order_dn(b, bp, bcharge)
-                        self.generate_row_inverse_Liouvillian(b, bp, bcharge)
-            self.add_off_diag_corrections()
+        # if self.off_diag_corrections:
+        #     for bcharge in range(ncharge):
+        #         for b in statesdm[bcharge]:
+        #             for bp in statesdm[bcharge]:
+        #                 if b == bp:
+        #                     continue
+        #                 self.generate_col_nondiag_kern_1st_order_dn(b, bp, bcharge)
+        #                 self.generate_row_inverse_Liouvillian(b, bp, bcharge)
+        #     self.add_off_diag_corrections()
 
     def generate_current_(self):
-        self.generate_current()
+        #self.generate_current()
         self.generate_current_noise()
         
     def generate_current_noise(self): #simon
@@ -263,7 +263,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
         # pseudoinverse
-        eps = 1e-6
+        # eps = 1e-8
         R = Q @ np.linalg.pinv(kern) @ Q # Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
         # derivatives of noise kernel
         Jp = 1j*(Lp1 - Lm1 + 2*Lp2 - 2*Lm2)
