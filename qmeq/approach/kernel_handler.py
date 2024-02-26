@@ -447,49 +447,8 @@ class KernelHandlerRTD(KernelHandler):
 class KernelHandlerRTDnoise(KernelHandlerRTD):
     """Class used for inserting matrix elements into the matrices used in the RTD noise approach."""
 
-    def set_matrix_element_lpm_pauli(self,pfct,pm,bb,aa): #simon
-        self.Lpm[pm,bb,aa] += pfct
-
-    def set_matrix_element_lpm(self, fct, pm, b, bp, bcharge, a, ap, acharge):
-        """ Adds a complex value to the matrix element connecting :math:`|a><ap|` and :math:`|b><bp|` in the kernel.
-
-        Parameters
-        ----------
-        fct : complex
-            value to be added
-        b : int
-            first state of :math:`|b><bp|`
-        bp : int
-            second state of :math:`|b><bp|`
-        bcharge : int
-            charge of states b and bp
-        a : int
-            first state of :math:`|a><ap|`
-        ap : int
-            second state of :math:`|a><ap|`
-        acharge : int
-            charge of the states a and ap
-        self.Lpm : ndarray
-            (modifies) the noise kernel
-        """
-        bbp = self.si.get_ind_dm0(b, bp, bcharge)
-        bbpi = self.ndm0 + bbp - self.npauli
-        bbpi_bool = True if bbpi >= self.ndm0 else False
-
-        aap = self.si.get_ind_dm0(a, ap, acharge)
-        aapi = self.ndm0 + aap - self.npauli
-        aap_sgn = +1 if self.si.get_ind_dm0(a, ap, acharge, maptype=3) else -1
-
-        fct_imag = fct.imag
-        fct_real = fct.real
-
-        self.Lpm[pm,bbp, aap] += fct_imag
-        if aapi >= self.ndm0:
-            self.Lpm[pm,bbp, aapi] += fct_real*aap_sgn
-            if bbpi_bool:
-                self.Lpm[pm,bbpi, aapi] += fct_imag*aap_sgn
-        if bbpi_bool:
-            self.Lpm[pm,bbpi, aap] += -fct_real
+    def set_matrix_element_lpm_first(self,l,pfct,pm,bb,aa): #simon
+        self.Lpm_first[l,pm,bb,aa] += pfct
 
     def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
         """
