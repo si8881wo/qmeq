@@ -218,7 +218,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 #    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
 
         kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5].real, 0)
+        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5], 0).real
 
         # if self.off_diag_corrections:
         #     for bcharge in range(ncharge):
