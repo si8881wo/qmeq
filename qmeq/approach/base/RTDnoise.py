@@ -961,7 +961,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                             #kh.add_element_2nd_order(r0, tempD.real, indx0, indx1, a1p, charge + 1, a3m, charge)
                             kh.add_element_2nd_order_noise_m(tempD, indx0, indx1, a1p, charge - 1, a3m, charge,-1,-1,-1,r0_c, r1_c,'d')
 #                            kh.add_element_2nd_order_noise_m_dot(tempD_dotp, indx0, indx1, a1p, charge + 1, a3m, charge,-1,-1,-1,-1,r0_c, r1_c,'d')
-                            kh.add_element_2nd_order_noise_dot_2((tempD_dotp-tempD)/h, indx0, indx1, a1p, charge + 1, a3m, charge,-1,-1,-1,-1,r0_c, r1_c,'d')
+                            kh.add_element_2nd_order_noise_dot_2((tempD_dotp-tempD)/h, indx0, indx1, a1p, charge - 1, a3m, charge,-1,-1,-1,-1,r0_c, r1_c,'d')
                             #mirrorm += tempD
                         if abs(t2X) > t_cutoff3:
                             tempX = -t2X * integralX_lpm(lpm_imaginary_2nd, -1, -1, -1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, True)
