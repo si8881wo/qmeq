@@ -447,8 +447,12 @@ class KernelHandlerRTD(KernelHandler):
 class KernelHandlerRTDnoise(KernelHandlerRTD):
     """Class used for inserting matrix elements into the matrices used in the RTD noise approach."""
 
-    def set_matrix_element_lpm_first(self,l,pfct,pm,bb,aa): #simon
+    def set_matrix_element_lpm_pauli(self,l,pfct,pm,bb,aa): #simon
         self.Lpm[pm,bb,aa] += pfct
+
+    def set_matrix_element_lpm_first(self,l,pfct,dpfct,pm,bb,aa): #simon
+        self.Lpm_first[l,pm,bb,aa] += pfct
+        self.Lpm_first_dot[l,pm,bb,aa] += dpfct
 
     def add_element_2nd_order(self, r0, r1, eta0, eta1, p1, p2, fct, fcth, h, indx0, indx1, a3, charge3, a4, charge4, dx):
         """

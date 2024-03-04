@@ -30,7 +30,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.lpm_h = 1e-10
+        self.lpm_h = 1e-8
 
     def restart(self):
         ApproachPyRTD.restart(self)
@@ -53,13 +53,15 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         self.paulifct_eps = np.zeros((nleads, ndm1, 2), dtype=doublenp)
         
         self.Lpm = np.zeros((3*5, kern_size, kern_size), dtype=complexnp) # temporary
-        self.Lpm_first = np.zeros((nleads,2*5, kern_size, kern_size), dtype=complexnp)
+        self.Lpm_first = np.zeros((nleads,3, kern_size, kern_size), dtype=complexnp)
+        self.Lpm_first_dot = np.zeros((nleads,3, kern_size, kern_size), dtype=complexnp)
         self.Lpm_second = np.zeros((nleads,nleads,3,3, kern_size, kern_size), dtype=complexnp)
         self.Lpm_second_dot = np.zeros((nleads,nleads,3,3, kern_size, kern_size), dtype=complexnp)
 
         kh = self.kernel_handler
         kh.Lpm = self.Lpm
         kh.Lpm_first = self.Lpm_first
+        kh.Lpm_first_dot = self.Lpm_first_dot
         kh.Lpm_second = self.Lpm_second
         kh.Lpm_second_dot = self.Lpm_second_dot
 
@@ -72,7 +74,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         
         self.Lpm.fill(0.0) # temporary
         self.Lpm_first.fill(0.0)
+        self.Lpm_first_dot.fill(0.0)
         self.Lpm_second.fill(0.0)
+        self.Lpm_second_dot.fill(0.0)
         self.current_noise.fill(0.0)
         
         self.lpm_imaginary_2nd = True
@@ -181,7 +185,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                     self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
 
         kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5], 0)
+        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5].real, 0)
 
         if self.off_diag_corrections:
             for bcharge in range(ncharge):
@@ -246,9 +250,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
     def generate_current_(self):
         #self.generate_current()
         self.generate_current_noise()
-        self.generarte_energy_current()
+        self.generate_energy_current()
 
-    def generarte_energy_current(self):
+    def generate_energy_current(self):
         pass
         
     def generate_current_noise(self): #simon
@@ -262,14 +266,13 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         noise : array
             Value of the current noise attaching the counting field to countingleads.
         """
-        phi0, E, si = self.phi0, self.qd.Ea, self.si
-        nleads = si.nleads
-        kern = sum(self.Lpm[0:5])
-        Lm1, Lp1 , Lm2, Lp2 = self.Lpm[1:5]
-        Lm1p, Lp1p , Lm2p, Lp2p = self.Lpm[6:10] # exact derivatives from first order 
-        Lm1p2, Lp1p2, Lm2p2, Lp2p2 = self.Lpm[11:15] # numerical derivatives from second order
-        Jdottemp = sum(self.Lpm[5:15]) # full energy derivative (including \chi = 0 terms)
-        
+        countingleads = self.funcp.countingleads
+        phi0 = self.phi0
+
+        L0, Lp1, Lp2, Lm2, Lm1 = self.build_counting_kernels(self.Lpm_first,self.Lpm_second,countingleads)
+        L0p,Lp1p, Lp2p, Lm2p, Lm1p = self.build_counting_kernels(self.Lpm_first_dot,self.Lpm_second_dot,countingleads)
+        kern = L0 + Lp1 + Lp2 + Lm2 + Lm1
+
         # auxilliary quantities
         # right eigenvector
         P = phi0[...,None]
@@ -283,8 +286,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         # derivatives of noise kernel
         Jp = 1j*(Lp1 - Lm1 + 2*Lp2 - 2*Lm2)
         Jpp = -Lp1 - Lm1 - 4*Lp2 - 4*Lm2
-        Jdot = Jdottemp
-        Jdotp = 1j*(Lp1p+Lp1p2 - Lm1p-Lm1p2 + 2*Lp2p+2*Lp2p2 - 2*Lm2p-2*Lm2p2)
+        Jdot = L0p + Lp1p + Lp2p + Lm2p + Lm1p
+        Jdotp = 1j*(Lp1p - Lm1p + 2*Lp2p - 2*Lm2p)
         # current and noise
         c = -1j*(O @ Jp @ P)
         s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c *(O @ (Jdotp - (Jp @ R @ (Jdot))) @ P)
@@ -292,33 +295,6 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
         self.current_noise[0] = c.item()
         self.current_noise[1] = s.item()
-
-    # def generate_fct_lpm(self,h=1e-6):
-        # """
-        # Make factors used for generating the first order diagonal kernel :math:`W_{dd}^{(1)}`.
-
-        # Parameters
-        # ----------
-        # paulifct : array
-            # (Modifies) Factors used for generating Pauli master equation kernel.
-        # """
-        # E, Tba, si = self.qd.Ea, self.leads.Tba, self.si
-        # mulst, tlst, dlst = self.leads.mulst, self.leads.tlst, self.leads.dlst
-        # ncharge, nleads, statesdm = si.ncharge, si.nleads, si.statesdm
-
-        # itype = self.funcp.itype
-        # paulifct_eps = self.paulifct_eps
-        # for charge in range(ncharge-1):
-            # ccharge = charge+1
-            # bcharge = charge
-            # for c, b in itertools.product(statesdm[ccharge], statesdm[bcharge]):
-                # cb = si.get_ind_dm1(c, b, bcharge)
-                # Ecb = E[c]-E[b]+h
-                # for l in range(nleads):
-                    # xcb = (Tba[l, b, c]*Tba[l, c, b]).real
-                    # rez = func_pauli(Ecb, mulst[l], tlst[l], dlst[l, 0], dlst[l, 1], itype)
-                    # paulifct_eps[l, cb, 0] = xcb*rez[0]
-                    # paulifct_eps[l, cb, 1] = xcb*rez[1]
    
     def generate_row_1st_order_kernel_lpm(self, b, bcharge):
         """Generates a row in the first order diagonal kernel :math:`W_{dd}^{(1)}`.
@@ -347,8 +323,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         
         acharge = bcharge-1
         ccharge = bcharge+1
-        ## possibly scaling of phi_pm factor by pi
+
         bb = si.get_ind_dm0(b, b, bcharge)
+
         for a in statesdm[acharge]: # careful: 1) eta=-xi from emary 2) a initial state, this adds an electron -> L+
             aa = si.get_ind_dm0(a, a, acharge)
             ba = si.get_ind_dm1(b, a, acharge)
@@ -363,12 +340,13 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 fermi_m = func_pauli(-lamb_m, 0, Tr, dlst[l, 0], dlst[l, 1], itype)[0]
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
+                kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 2j*gamma*phi_eps, 1, bb, aa) # set kernel element and derivative
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 2, bb, aa) # set kernel element
-                    kh.set_matrix_element_lpm_first(l,2j*gamma*phi_eps, 7, bb, aa) # set epsilon derivative
+                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m), 2, bb, aa) # set kernel element
+                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 7, bb, aa) # set epsilon derivative
                 else:
-                    kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 0, bb, aa)
-                    kh.set_matrix_element_lpm_first(l,2j*gamma*phi_eps, 5, bb, aa)
+                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m), 0, bb, aa)
+                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 5, bb, aa)
         for c in statesdm[ccharge]: # carefull: 1) eta=-xi from emary 2) c initial state, this takes out an electron -> L-
             cc = si.get_ind_dm0(c, c, ccharge)
             cb = si.get_ind_dm1(c, b, bcharge)
@@ -383,12 +361,13 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 fermi_p = func_pauli(lamb_p, 0, Tr, dlst[l, 0], dlst[l, 1], itype)[0]
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
+                kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 2j*gamma*phi_eps, -1, bb, cc) # set kernel element and derivative
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m),1,bb,cc)
-                    kh.set_matrix_element_lpm_first(l,2j*gamma*phi_eps, 6, bb, cc)
+                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m),1,bb,cc)
+                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 6, bb, cc)
                 else:
-                    kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m),0,bb,cc)
-                    kh.set_matrix_element_lpm_first(l,2j*gamma*phi_eps, 5, bb, cc)
+                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m),0,bb,cc)
+                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 5, bb, cc)
         # diagonals
         # loop over intermediatate states
         for bm in statesdm[acharge]:# acharge=bcharge-1
@@ -403,8 +382,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 fermi_p = func_pauli(lamb_p, 0, Tr, dlst[l, 0], dlst[l, 1], itype)[0]
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
-                kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_m+fermi_p), 0, bb, bb)
-                kh.set_matrix_element_lpm_first(l,-2j*gamma*phi_eps, 5, bb, bb)
+                kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_p+fermi_m), -2j*gamma*phi_eps, 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(l,-gamma/2*(fermi_m+fermi_p), 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(l,-2j*gamma*phi_eps, 5, bb, bb)
         for bp in statesdm[ccharge]:# ccharge=bcharge+1
             dE = E[bp] - E[b]
             for l in range(nleads):       
@@ -417,8 +397,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 fermi_m = func_pauli(-lamb_m, 0, Tr, dlst[l, 0], dlst[l, 1], itype)[0]
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
-                kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_p+fermi_m), 0, bb, bb)
-                kh.set_matrix_element_lpm_first(l,-2j*gamma*phi_eps, 5, bb, bb)
+                kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_p+fermi_m), -2j*gamma*phi_eps, 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(l,-gamma/2*(fermi_p+fermi_m), 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(l,-2j*gamma*phi_eps, 5, bb, bb)
 
     def generate_col_diag_kern_2nd_order_lpm(self, a0, charge):
         """Partly generates a column in the second order kernel for the diagonal density matrix :math:`W_{dd}^{(2)}`.
@@ -899,3 +880,31 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                             kh.add_element_2nd_order_noise_m(tempX, indx0, indx1, a1p, charge - 1, a3m, charge,-1,-1,-1,r0_c, r1_c,'x')
                             kh.add_element_2nd_order_noise_dot_2((tempX_dotp-tempX)/h, indx0, indx1, a1p, charge - 1, a3m, charge,-1,-1,-1,-1,r0_c, r1_c,'x')
                             
+    def build_counting_kernels(self,Lpm_first,Lpm_second,countingleads):
+        """Builds the counting kernels for the given counting leads.
+        """
+        nleads = self.si.nleads
+        kern_size = self.get_kern_size()
+        L = np.zeros((5,kern_size,kern_size),dtype=complex)
+        # first order
+        for r0 in countingleads:
+            L[-1] += Lpm_first[r0,-1,:,:]
+            L[1] += Lpm_first[r0,1,:,:]
+        # second order 
+        for r0,r1 in product(range(nleads),range(nleads)):
+            if (r0 in countingleads) and (r1 not in countingleads):
+                L[-1] += np.sum(Lpm_second[r0,r1,-1,:,:,:],axis=0)
+                L[1] += np.sum(Lpm_second[r0,r1,1,:,:,:],axis=0)
+            if (r1 in countingleads) and (r0 not in countingleads):
+                L[-1] += np.sum(Lpm_second[r0,r1,:,-1,:,:],axis=0)
+                L[1] += np.sum(Lpm_second[r0,r1,:,1,:,:],axis=0)
+            if (r0 in countingleads) and (r1 in countingleads):
+                L[-1] += Lpm_second[r0,r1,-1,0,:,:]
+                L[-1] += Lpm_second[r0,r1,0,-1,:,:]
+                L[1] += Lpm_second[r0,r1,1,0,:,:]
+                L[1] += Lpm_second[r0,r1,0,1,:,:]
+                L[-2] += Lpm_second[r0,r1,-1,-1,:,:]
+                L[2] += Lpm_second[r0,r1,1,1,:,:]
+        # for completeness
+        L[0]=np.sum(Lpm_first,axis=(0,1))+np.sum(Lpm_second,axis=(0,1,2,3))-np.sum(L[1:],axis=0)
+        return L
