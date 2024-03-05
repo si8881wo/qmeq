@@ -34,12 +34,20 @@ class ApproachPyRTDnoise(ApproachPyRTD):
 
     def restart(self):
         ApproachPyRTD.restart(self)
-        
+        # to separate kernel
         self.Lpm = None # temporary
         self.Lpm_first = None
+        self.Lpm_first_dot = None
         self.Lpm_second = None
+        self.Lpm_second_dot = None
+        # for first order results at the smae time
+        self.phi0_first = None
+        self.kern_first = None
+        # results
         self.current_noise = None
-        self.lpm_imaginary_2nd = None
+        self.current_noise_first = None
+
+        self.lpm_imaginary_2nd = None # temporary
 
     def prepare_kernel_handler(self):
         self.kernel_handler = KernelHandlerRTDnoise(self.si)
@@ -58,7 +66,13 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         self.Lpm_second = np.zeros((nleads,nleads,3,3, kern_size, kern_size), dtype=complexnp)
         self.Lpm_second_dot = np.zeros((nleads,nleads,3,3, kern_size, kern_size), dtype=complexnp)
 
+        kern_size_rows = kern_size if self.funcp.symq else kern_size+1
+        self.kern_first = np.zeros((kern_size_rows, kern_size), dtype=self.dtype, order='F')
+        self.phi0_first = np.zeros(kern_size, dtype=self.dtype)
+
         kh = self.kernel_handler
+        kh.phi0_first=self.phi0_first
+        kh.kern_first=self.kern_first
         kh.Lpm = self.Lpm
         kh.Lpm_first = self.Lpm_first
         kh.Lpm_first_dot = self.Lpm_first_dot
@@ -66,6 +80,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         kh.Lpm_second_dot = self.Lpm_second_dot
 
         self.current_noise = np.zeros(2, dtype = complexnp)
+        self.current_noise_first = np.zeros(2, dtype = complexnp)
         
         self.lpm_imaginary_2nd = True
 
@@ -78,6 +93,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         self.Lpm_second.fill(0.0)
         self.Lpm_second_dot.fill(0.0)
         self.current_noise.fill(0.0)
+        self.current_noise_first.fill(0.0)
+        self.phi0_first.fill(0.0)
+        self.kern_first.fill(0.0)
         
         self.lpm_imaginary_2nd = True
             
@@ -105,97 +123,47 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         if masterq:
             self.prepare_kern()
             self.generate_fct()
-            #self.generate_fct_lpm()
-            if not self.funcp.mfreeq:
-                self.generate_kern()
-                self.solve_kern()
-            else:
-                self.solve_matrix_free()
+            self.generate_kern()
+            self.solve_kern()
+            self.solve_kern_first()
             if currentq:
-                self.generate_current_()
-    
-    def solve_first(self, qdq=True, rotateq=True, masterq=True, currentq=True, *args, **kwargs):
-        """
-        Solves the master equation.
+                self.generate_currents()
 
-        Parameters
-        ----------
-        qdq : bool
-            Diagonalise many-body quantum dot Hamiltonian
-            and express the lead matrix Tba in the eigenbasis.
-        rotateq : bool
-            Rotate the many-body tunneling matrix Tba.
-        masterq : bool
-            Solve the master equation.
-        currentq : bool
-            Calculate the current.
-        """
-        if qdq:
-            self.qd.diagonalise()
-            if rotateq:
-                self.rotate()
-        #
-        if masterq:
-            self.prepare_kern()
-            self.generate_fct()
-            #self.generate_fct_lpm()
-            if not self.funcp.mfreeq:
-                self.generate_kern_first()
-                self.solve_kern()
-            else:
-                self.solve_matrix_free()
-            if currentq:
-                self.generate_current_()
 
-    def generate_kern_first(self):
-        r""" Generates all kernels including tunnel processes of orders :math:`t^2` and :math:`t^4`.
+    def solve_kern_first(self):
+        """Finds the stationary state using least squares or using LU decomposition."""
+        solmethod = self.funcp.solmethod
+        symq = self.funcp.symq
+        norm_row = self.funcp.norm_row
+        replaced_eq = self.replaced_eq
 
-        The total kernel used to solve for :math:`\phi_0` is :math:`W =\sum_r W^r= W_{dd}^{(1)} + W_{dd}^{(2)}
-        + W_{dn}^{(1)} (L_{nn})^{-1} W_{nd}^{(1)}`. The last term is ignored if `off_diag_corrections` is False.
+        kern = self.kern_first
+        bvec = self.bvec
 
-        Parameters
-        ----------
-        self.kern : ndarray
-            (Modifies) The total Kernel for the diagonal density matrix. Has npauli * npauli entries.
-        self.Wdd :  ndarray
-            (Modifies) The lead-resolved Kernel for the diagonal density matrix. Has
-            nleads * npauli * npauli entries.
+        # Replace one equation by the normalisation condition
+        if symq:
+            replaced_eq[:] = kern[norm_row]
+            kern[norm_row] = self.norm_vec
+            bvec[norm_row] = 1
+        else:
+            kern[-1] = self.norm_vec
+            bvec[-1] = 1
 
-        """
-        si, kh = self.si, self.kernel_handler
-        ncharge, statesdm = si.ncharge, si.statesdm
-        self.off_diag_corrections = self.funcp.off_diag_corrections
-        h = self.lpm_h
+        # Try to solve the master equation
+        try:
+            if solmethod == 'solve':
+                self.sol0 = [np.linalg.solve(kern, bvec)]
+            elif solmethod == 'lsqr':
+                self.sol0 = np.linalg.lstsq(kern, bvec, rcond=-1)
 
-        if True:#(not np.all(np.isclose(self.leads.tlst, self.leads.tlst[0]))) or np.any(abs(self.leads.Tba.imag)>0):
-            self.set_Ozaki_params()
-
-        for bcharge in range(ncharge):
-            for b in statesdm[bcharge]:
-                if not kh.is_unique(b, b, bcharge):
-                    continue
-                self.generate_row_1st_order_kernel(b, bcharge)
-                self.generate_row_1st_order_kernel_lpm(b, bcharge)#simon
-                #self.generate_col_diag_kern_2nd_order(b, bcharge)
-                #self.generate_col_diag_kern_2nd_order_lpm(b, bcharge)
-                self.generate_row_1st_energy_kernel(b, bcharge)
-                #self.generate_row_2nd_energy_kernel(b, bcharge)
-
-                if self.off_diag_corrections:
-                    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
-
-        kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5].real, 0)
-
-        if self.off_diag_corrections:
-            for bcharge in range(ncharge):
-                for b in statesdm[bcharge]:
-                    for bp in statesdm[bcharge]:
-                        if b == bp:
-                            continue
-                        self.generate_col_nondiag_kern_1st_order_dn(b, bp, bcharge)
-                        self.generate_row_inverse_Liouvillian(b, bp, bcharge)
-            self.add_off_diag_corrections()
+            self.phi0_first[:] = self.sol0[0]
+            self.success = True
+        except Exception as exept:
+            print('Failed to solve the master equation for phi0_first')
+            print(kern)
+            self.funcp.print_error(exept)
+            self.phi0_first.fill(0.0)
+            self.success = False
 
     def generate_kern(self):
         r""" Generates all kernels including tunnel processes of orders :math:`t^2` and :math:`t^4`.
@@ -215,7 +183,6 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         si, kh = self.si, self.kernel_handler
         ncharge, statesdm = si.ncharge, si.statesdm
         self.off_diag_corrections = self.funcp.off_diag_corrections
-        h = self.lpm_h
 
         if True:#(not np.all(np.isclose(self.leads.tlst, self.leads.tlst[0]))) or np.any(abs(self.leads.Tba.imag)>0):
             self.set_Ozaki_params()
@@ -224,9 +191,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
             for b in statesdm[bcharge]:
                 if not kh.is_unique(b, b, bcharge):
                     continue
-                #self.generate_row_1st_order_kernel(b, bcharge)
                 self.generate_row_1st_order_kernel_lpm(b, bcharge)#simon
-                #self.generate_col_diag_kern_2nd_order(b, bcharge)
                 self.generate_col_diag_kern_2nd_order_lpm(b, bcharge)
                 #self.generate_row_1st_energy_kernel(b, bcharge)
                 #self.generate_row_2nd_energy_kernel(b, bcharge)
@@ -235,7 +200,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 #    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
 
         kern_size = self.get_kern_size()
-        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm[0:5].real, 0)
+        self.kern[:kern_size, :kern_size] += np.sum(self.Lpm_first.real, axis=(0,1)) + np.sum(self.Lpm_second.real, axis=(0,1,2,3))
+        self.kern_first[:kern_size, :kern_size] += np.sum(self.Lpm_first.real, axis=(0,1))
 
         # if self.off_diag_corrections:
         #     for bcharge in range(ncharge):
@@ -247,8 +213,9 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         #                 self.generate_row_inverse_Liouvillian(b, bp, bcharge)
         #     self.add_off_diag_corrections()
 
-    def generate_current_(self):
+    def generate_currents(self):
         #self.generate_current()
+        self.generate_current_noise_first()
         self.generate_current_noise()
         self.generate_energy_current()
 
@@ -271,7 +238,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
 
         L0, Lp1, Lp2, Lm2, Lm1 = self.build_counting_kernels(self.Lpm_first,self.Lpm_second,countingleads)
         L0p,Lp1p, Lp2p, Lm2p, Lm1p = self.build_counting_kernels(self.Lpm_first_dot,self.Lpm_second_dot,countingleads)
-        kern = L0 + Lp1 + Lp2 + Lm2 + Lm1
+        kern = self.kern
 
         # auxilliary quantities
         # right eigenvector
@@ -290,11 +257,52 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         Jdotp = 1j*(Lp1p - Lm1p + 2*Lp2p - 2*Lm2p)
         # current and noise
         c = -1j*(O @ Jp @ P)
-        s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c *(O @ (Jdotp - (Jp @ R @ (Jdot))) @ P)
+        s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c *(O @ (Jdotp - (Jp @ R @ Jdot)) @ P)
         #print('S_m = ',-O @ (Jpp - 2*(Jp @ R @ Jp)) @ P)
         #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
         self.current_noise[0] = c.item()
         self.current_noise[1] = s.item()
+
+    def generate_current_noise_first(self): #simon
+        """
+        Calculates currents using Pauli master equation approach and noise via the C.Emary approach summed over countingleads passed
+
+        Returns
+        ----------
+        current : float
+            Value of the current attaching the counting field to countingleads.
+        noise : array
+            Value of the current noise attaching the counting field to countingleads.
+        """
+        countingleads = self.funcp.countingleads
+        phi0 = self.phi0_first
+
+        L0, Lp1, Lm1 = self.build_counting_kernels_first(self.Lpm_first,countingleads)
+        L0p,Lp1p, Lm1p = self.build_counting_kernels_first(self.Lpm_first_dot,countingleads)
+        kern = self.kern_first
+
+        # auxilliary quantities
+        # right eigenvector
+        P = phi0[...,None]
+        # left eigenvector
+        O = np.ones(np.size(P))[None,...]
+        # projector
+        Q = (np.eye(np.size(P)) - P @ O)
+        # pseudoinverse
+        # eps = 1e-8
+        R = Q @ np.linalg.pinv(kern) @ Q # Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
+        # derivatives of noise kernel
+        Jp = 1j*(Lp1 - Lm1)
+        Jpp = -Lp1 - Lm1
+        Jdot = L0p + Lp1p + Lm1p
+        Jdotp = 1j*(Lp1p - Lm1p)
+        # current and noise
+        c = -1j*(O @ Jp @ P)
+        s = -(O @ (Jpp - 2*(Jp @ R @ Jp)) @ P) + 2 * c *(O @ (Jdotp - (Jp @ R @ (Jdot))) @ P)
+        #print('S_m = ',-O @ (Jpp - 2*(Jp @ R @ Jp)) @ P)
+        #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
+        self.current_noise_first[0] = c.item()
+        self.current_noise_first[1] = s.item()
    
     def generate_row_1st_order_kernel_lpm(self, b, bcharge):
         """Generates a row in the first order diagonal kernel :math:`W_{dd}^{(1)}`.
@@ -907,4 +915,18 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 L[2] += Lpm_second[r0,r1,1,1,:,:]
         # for completeness
         L[0]=np.sum(Lpm_first,axis=(0,1))+np.sum(Lpm_second,axis=(0,1,2,3))-np.sum(L[1:],axis=0)
+        return L
+    
+    def build_counting_kernels_first(self,Lpm_first,countingleads):
+        """Builds the counting kernels for the given counting leads.
+        """
+        nleads = self.si.nleads
+        kern_size = self.get_kern_size()
+        L = np.zeros((3,kern_size,kern_size),dtype=complex)
+        # first order
+        for r0 in countingleads:
+            L[-1] += Lpm_first[r0,-1,:,:]
+            L[1] += Lpm_first[r0,1,:,:]
+        # for completeness
+        L[0]=np.sum(Lpm_first,axis=(0,1))-np.sum(L[1:],axis=0)
         return L
