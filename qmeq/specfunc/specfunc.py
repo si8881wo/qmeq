@@ -1009,16 +1009,3 @@ def BW_Ozaki(D):
     b_and_R = Ozaki(N * 2 + 2)
     return b_and_R
 
-# def pre(p,Na2p,Na2m):
-    # """ Calculates prefactor +- in the G operators for the Tab for use in the counting statistics without exploiting the mirror symmetry.
-
-    # Parameters
-    # ----------
-    # p : float/int
-        # Keldysh index
-    # Na2p : int
-        # charge of state a_2+
-    # Na2m : int
-        # charge of state a_2-
-    # """
-    # return p**(1+Na2p-Na2m)

@@ -532,6 +532,24 @@ class KernelHandlerRTDnoise(KernelHandlerRTD):
         # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
         self.Lpm_second_dot[r0,r1,cind3[0],cind3[1], indx3, indx1] += -fct_dot
 
+        # for std currents
+        if dx == 'd':
+            self.Wdd[r0, indx4, indx0] += fct.real
+            # Flipping left-most vertex p3 = -p3
+            self.Wdd[r0, indx3, indx0] += -fct.real
+            # Flipping right-most vertex p0 = -p0
+            self.Wdd[r0, indx4, indx1] += fct.real
+            # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
+            self.Wdd[r0, indx3, indx1] += -fct.real
+        elif dx == 'x':
+            self.Wdd[r1, indx4, indx0] += fct.real
+            # Flipping left-most vertex p3 = -p3
+            self.Wdd[r1, indx3, indx0] += -fct.real
+            # Flipping right-most vertex p0 = -p0
+            self.Wdd[r1, indx4, indx1] += fct.real
+            # Flipping left-most and right-most vertices p0 = -p0 and p3 = -p3
+            self.Wdd[r1, indx3, indx1] += -fct.real
+
     def add_element_2nd_order_noise(self, fct, indx0, indx1, a3, charge3, a4, charge4, eta1, p1, p2, r0, r1, dx):
         """
         Adds a value to the counting index resolved noise kernel for the diagonal density matrix. Uses symmetries
