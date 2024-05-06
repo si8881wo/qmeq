@@ -186,7 +186,7 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         replaced_eq = self.replaced_eq
 
         kern = self.kern_first
-        bvec = self.kern_second @ self.phi0_first
+        bvec = - self.kern_second @ self.phi0_first
 
         # Replace one equation by the normalisation condition
         if symq:
@@ -402,16 +402,16 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         Jdotp_2 = 1j*(Lp1p_2 - Lm1p_2 + 2*Lp2p_2 - 2*Lm2p_2)
         # current
         c1 = -1j*(O @ Jp_1 @ P0)
-        c2 = -1j*(O @ Jp_2 @ P0) - 1j*(O @ Jp_1 @ P0)
+        c2 = -1j*(O @ Jp_2 @ P0) - 1j*(O @ Jp_1 @ P1)
         # noise
         s1 = -(O @ Jpp_1 @ P0) + 2 * (O @ Jp_1 @ Rm1 @ Jp_1 @ P0)
-        s2 = -(O @ Jpp_1 @ P1) - (O @ Jpp_2 @ P0) +\
+        s2 = -(O @ Jpp_1 @ P1) - (O @ Jpp_2 @ P0) -\
             2 * (O @ Jp_1 @ R0 @ Jp_1 @ P0) +\
             2 * (O @ Jp_2 @ Rm1 @ Jp_1 @ P0) +\
             2 * (O @ Jp_1 @ Rm1 @ Jp_2@ P0) +\
             2 * (O @ Jp_1 @ Rm1 @ Jp_1 @ P1) +\
-            c1 * (O @ Jdotp_1 @ P0) -\
-            c1 * (O @ Jp_1 @ Rm1 @ Jdot_1 @ P0)
+            2 * c1 * (O @ Jdotp_1 @ P0) -\
+            2 * c1 * (O @ Jp_1 @ Rm1 @ Jdot_1 @ P0)
         #print('S_m = ',-O @ (Jpp - 2*(Jp @ R @ Jp)) @ P)
         #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
         self.current_noise_o4trunc[0] = c1.item()
