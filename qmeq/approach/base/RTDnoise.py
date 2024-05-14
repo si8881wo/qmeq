@@ -381,16 +381,18 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         # right eigenvector
         P = phi0[...,None]
         P0 = phi0_first[...,None]
-        P1 = phi0_second[...,None]
+        P1 = phi0_second[...,None]-phi0_first[...,None]
+        P01 = P0 + P1
         # left eigenvector
         O = np.ones(np.size(P))[None,...]
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
+        Q0 = (np.eye(np.size(P0)) - P0 @ O)
         # pseudoinverse
         # eps = 1e-8
         R = Q @ np.linalg.pinv(kern) @ Q # Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
-        Rm1 = Q @ np.linalg.pinv(kern_first) @ Q
-        R0 = Q @ kern_second @ np.linalg.pinv(kern_first)@ np.linalg.pinv(kern_first) @ Q
+        Rm1 = np.linalg.inv(kern_first)
+        R0 = - np.linalg.inv(kern_first) @ kern_second @ np.linalg.inv(kern_first)
         # derivatives of noise kernel
         Jp_1 = 1j*(Lp1_1 - Lm1_1 + 2*Lp2_1 - 2*Lm2_1)
         Jp_2 = 1j*(Lp1_2 - Lm1_2 + 2*Lp2_2 - 2*Lm2_2)
@@ -402,18 +404,22 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         Jdotp_2 = 1j*(Lp1p_2 - Lm1p_2 + 2*Lp2p_2 - 2*Lm2p_2)
         # current
         c1 = -1j*(O @ Jp_1 @ P0)
-        c2 = -1j*(O @ Jp_2 @ P0) - 1j*(O @ Jp_1 @ P1)
+        c2 = -1j*(O @ Jp_2 @ P0) - 1j*(O @ Jp_1 @ P01)
         # noise
-        s1 = -(O @ Jpp_1 @ P0) + 2 * (O @ Jp_1 @ Rm1 @ Jp_1 @ P0)
-        s2 = -(O @ Jpp_1 @ P1) - (O @ Jpp_2 @ P0) -\
-            2 * (O @ Jp_1 @ R0 @ Jp_1 @ P0) +\
-            2 * (O @ Jp_2 @ Rm1 @ Jp_1 @ P0) +\
-            2 * (O @ Jp_1 @ Rm1 @ Jp_2@ P0) +\
-            2 * (O @ Jp_1 @ Rm1 @ Jp_1 @ P1) +\
+        s1 = -(O @ Jpp_1 @ P0) + 2 * (O @ Jp_1 @ Q0 @ Rm1 @ Q0 @ Jp_1 @ P0)
+        s2 = -(O @ Jpp_1 @ P01) - (O @ Jpp_2 @ P0) +\
+            2 * (O @ Jp_1 @ Q0 @ Rm1 @ Q0 @ Jp_1 @ P01) +\
+            2 * (O @ Jp_1 @ Q0 @ R0 @ Q0 @ Jp_1 @ P0) +\
+            2 * (O @ Jp_1 @ P1)*(O @ Rm1 @ Q0 @ Jp_1 @ P0) +\
+            2 * (O @ Jp_1 @ Q0 @ Rm1 @ P1)*(O @ Jp_1 @ P0) +\
+            2 * (O @ Jp_2 @ Q0 @ Rm1 @ Q0 @ Jp_1 @ P0) +\
+            -2 * (O @ Jp_1 @ P1)*(O @ Rm1 @ Q0 @ Jp_1 @ P0) +\
+            -2 * (O @ Jp_1 @ Q0 @ Rm1 @ P1)*(O @ Jp_1 @ P0) +\
+            2 * (O @ Jp_1 @ Q0 @ Rm1 @ Q0 @ Jp_2@ P0) +\
+            -2 * (O @ Jp_1 @ P1)*(O @ Rm1 @ Q0 @ Jp_1@ P0) +\
+            -2 * (O @ Jp_1 @ Q0 @ Rm1 @ P1)*(O @ Jp_1@ P0) +\
             2 * c1 * (O @ Jdotp_1 @ P0) -\
-            2 * c1 * (O @ Jp_1 @ Rm1 @ Jdot_1 @ P0)
-        #print('S_m = ',-O @ (Jpp - 2*(Jp @ R @ Jp)) @ P)
-        #print(2*c * O @ (Jdotp - Jp @ R @ Jdot) @ P)
+            2 * c1 * (O @ Jp_1 @ Q0 @ Rm1 @ Q0 @ Jdot_1 @ P0)
         self.current_noise_o4trunc[0] = c1.item()
         self.current_noise_o4trunc[1] = c2.item()
         self.current_noise_o4trunc[2] = s1.item()
