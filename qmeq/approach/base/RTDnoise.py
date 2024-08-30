@@ -241,8 +241,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                     continue
                 self.generate_row_1st_order_kernel_lpm(b, bcharge)#simon
                 self.generate_col_diag_kern_2nd_order_lpm(b, bcharge)
-                #self.generate_row_1st_energy_kernel(b, bcharge)
-                #self.generate_row_2nd_energy_kernel(b, bcharge)
+                self.generate_row_1st_energy_kernel(b, bcharge)
+                self.generate_row_2nd_energy_kernel(b, bcharge)
 
                 #if self.off_diag_corrections:
                 #    self.generate_col_nondiag_kern_1st_order_nd(b, bcharge)
@@ -391,8 +391,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
         # pseudoinverse
         # eps = 1e-8
         R = Q @ np.linalg.pinv(kern) @ Q # Q @ np.linalg.inv(eps*np.eye(np.size(P)) + kern) @ Q
-        Rm1 = np.linalg.inv(kern_first)
-        R0 = - np.linalg.inv(kern_first) @ kern_second @ np.linalg.inv(kern_first)
+        Rm1 = np.linalg.pinv(kern_first)
+        R0 = - np.linalg.pinv(kern_first) @ kern_second @ np.linalg.pinv(kern_first)
         # derivatives of noise kernel
         Jp_1 = 1j*(Lp1_1 - Lm1_1 + 2*Lp2_1 - 2*Lm2_1)
         Jp_2 = 1j*(Lp1_2 - Lm1_2 + 2*Lp2_2 - 2*Lm2_2)
