@@ -458,11 +458,11 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 phi_eps = diff_phi(lamb_p/Tr)
                 kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 2j*gamma*phi_eps, 1, bb, aa) # set kernel element and derivative
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m), 2, bb, aa) # set kernel element
-                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 7, bb, aa) # set epsilon derivative
+                    kh.set_matrix_element_lpm_pauli(gamma/2*(fermi_p+fermi_m), 2, bb, aa) # set kernel element
+                    kh.set_matrix_element_lpm_pauli(2j*gamma*phi_eps, 7, bb, aa) # set epsilon derivative
                 else:
-                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m), 0, bb, aa)
-                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 5, bb, aa)
+                    kh.set_matrix_element_lpm_pauli(gamma/2*(fermi_p+fermi_m), 0, bb, aa)
+                    kh.set_matrix_element_lpm_pauli(2j*gamma*phi_eps, 5, bb, aa)
         for c in statesdm[ccharge]: # carefull: 1) eta=-xi from emary 2) c initial state, this takes out an electron -> L-
             cc = si.get_ind_dm0(c, c, ccharge)
             cb = si.get_ind_dm1(c, b, bcharge)
@@ -479,11 +479,11 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 phi_eps = diff_phi(lamb_p/Tr)
                 kh.set_matrix_element_lpm_first(l,gamma/2*(fermi_p+fermi_m), 2j*gamma*phi_eps, -1, bb, cc) # set kernel element and derivative
                 if l in countingleads:
-                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m),1,bb,cc)
-                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 6, bb, cc)
+                    kh.set_matrix_element_lpm_pauli(gamma/2*(fermi_p+fermi_m),1,bb,cc)
+                    kh.set_matrix_element_lpm_pauli(2j*gamma*phi_eps, 6, bb, cc)
                 else:
-                    kh.set_matrix_element_lpm_pauli(l,gamma/2*(fermi_p+fermi_m),0,bb,cc)
-                    kh.set_matrix_element_lpm_pauli(l,2j*gamma*phi_eps, 5, bb, cc)
+                    kh.set_matrix_element_lpm_pauli(gamma/2*(fermi_p+fermi_m),0,bb,cc)
+                    kh.set_matrix_element_lpm_pauli(2j*gamma*phi_eps, 5, bb, cc)
         # diagonals
         # loop over intermediatate states
         for bm in statesdm[acharge]:# acharge=bcharge-1
@@ -499,8 +499,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
                 kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_p+fermi_m), -2j*gamma*phi_eps, 0, bb, bb)
-                kh.set_matrix_element_lpm_pauli(l,-gamma/2*(fermi_m+fermi_p), 0, bb, bb)
-                kh.set_matrix_element_lpm_pauli(l,-2j*gamma*phi_eps, 5, bb, bb)
+                kh.set_matrix_element_lpm_pauli(-gamma/2*(fermi_m+fermi_p), 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(-2j*gamma*phi_eps, 5, bb, bb)
         for bp in statesdm[ccharge]:# ccharge=bcharge+1
             dE = E[bp] - E[b]
             for l in range(nleads):       
@@ -514,8 +514,8 @@ class ApproachPyRTDnoise(ApproachPyRTD):
                 # epsilon derivative
                 phi_eps = diff_phi(lamb_p/Tr)
                 kh.set_matrix_element_lpm_first(l,-gamma/2*(fermi_p+fermi_m), -2j*gamma*phi_eps, 0, bb, bb)
-                kh.set_matrix_element_lpm_pauli(l,-gamma/2*(fermi_p+fermi_m), 0, bb, bb)
-                kh.set_matrix_element_lpm_pauli(l,-2j*gamma*phi_eps, 5, bb, bb)
+                kh.set_matrix_element_lpm_pauli(-gamma/2*(fermi_p+fermi_m), 0, bb, bb)
+                kh.set_matrix_element_lpm_pauli(-2j*gamma*phi_eps, 5, bb, bb)
 
     def generate_col_diag_kern_2nd_order_lpm(self, a0, charge):
         """Partly generates a column in the second order kernel for the diagonal density matrix :math:`W_{dd}^{(2)}`.

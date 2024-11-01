@@ -8,6 +8,8 @@ from ...wrappers.mytypes import doublenp
 from ...specfunc.specfunc import func_pauli
 from ..aprclass import Approach
 
+from ..kernel_handler import KernelHandlerNoise
+
 # ---------------------------------------------------------------------------------------------------
 # Pauli master equation
 # ---------------------------------------------------------------------------------------------------
@@ -23,6 +25,9 @@ class ApproachPauli(Approach):
         self.Lpm = None
         self.current_noise = None
         self.energy_current_noise = None
+
+    def prepare_kernel_handler(self):
+        self.kernel_handler = KernelHandlerNoise(self.si)
 
     def prepare_arrays(self):
         Approach.prepare_arrays(self)
