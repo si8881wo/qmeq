@@ -10,6 +10,7 @@ from ...wrappers.mytypes import complexnp
 from ..aprclass import Approach
 from .neumann1 import Approach1vN
 
+from ..kernel_handler import KernelHandlerNoise
 
 # ---------------------------------------------------------------------------------------------------
 # Redfield approach
@@ -23,6 +24,9 @@ class ApproachRedfield(Approach):
         self.Lpm = None
         self.current_noise = None
         self.energy_current_noise = None
+
+    def prepare_kernel_handler(self):
+        self.kernel_handler = KernelHandlerNoise(self.si)
 
     def prepare_arrays(self):
         Approach1vN.prepare_arrays(self)
