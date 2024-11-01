@@ -162,7 +162,7 @@ class ApproachPauli(Approach):
         
     def generate_current_noise(self): #simon
         """
-        Calculates currents using Pauli master equation approach and noise via the C.Emary approach summed over countingleads passed
+        Calculates currents using Pauli master equation approach and noise via the C.Emary (PRB 80, 235306 (2009)) approach summed over countingleads passed
 
         Returns
         ----------
@@ -194,12 +194,3 @@ class ApproachPauli(Approach):
         s = -O @ (Jpp - 2*(Jp @ R @ Jp)) @ P
         self.current_noise[0] = c.real.item()
         self.current_noise[1] = s.real.item()
-        
-#         # energy current
-#         e = (E[None,...] @ (Lp + Lm) @ P)
-#         self.energy_current_noise[0] = e.real.item()
-        
-#         # heat current
-#         q = e - c * mu
-
-# ---------------------------------------------------------------------------------------------------
