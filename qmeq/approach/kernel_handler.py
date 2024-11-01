@@ -468,13 +468,31 @@ class KernelHandlerRTD(KernelHandler):
             indx += self.ndm0 - self.npauli
         self.Lnn[indx, indx] += fct
 
-class KernelHandlerRTDnoise(KernelHandlerRTD):
+class KernelHandlerRTDnoise(KernelHandlerNoise, KernelHandlerRTD):
     """Class used for inserting matrix elements into the matrices used in the RTD noise approach."""
 
-    def set_matrix_element_lpm_pauli(self,l,pfct,pm,bb,aa): #simon
-        self.Lpm[pm,bb,aa] += pfct
+    def set_matrix_element_lpm_first(self,l,pfct,dpfct,pm,bb,aa):
+        """ Adds a kernel value (pfct) and the corresponding energy derivative (dpfct) to the the matrix element connecting the states
+        bb and aa with counting index pm in the in the counting field dependend first order kernels.
 
-    def set_matrix_element_lpm_first(self,l,pfct,dpfct,pm,bb,aa): #simon
+        Parameters
+        ----------
+        pfct : double
+            value to be added to Lpm_first[l,pm,bb,aa]
+        dpfct : double
+            value to be added to Lpm_first_dot[l,pm,bb,aa]
+        pm : int
+            counting index
+        bb : int
+            first state/index
+        aa : int
+            second state/index
+        self.Lpm_first : ndarray
+            (modifies) the first order counting kernel
+        self.Lpm_first_dot : ndarray
+            (modifies) the energy derivatives of the first order counting kernel
+        """
+
         self.Lpm_first[l,pm,bb,aa] += pfct
         self.Lpm_first_dot[l,pm,bb,aa] += dpfct
 
