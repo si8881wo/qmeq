@@ -24,7 +24,7 @@ from .various import use_all_states
 from .validation import validate_kerntype
 from .validation import validate_itype
 from .validation import validate_indexing
-from .validation import validate_countingleads #simon
+from .validation import validate_countingleads
 
 # -----------------------------------------------------------
 # Python modules
@@ -70,7 +70,7 @@ attribute_map = dict(
     solve='appr', current='appr', energy_current='appr',
     heat_current='appr', phi0='appr', phi1='appr', niter='appr',
     iters='appr', kern='appr', success='appr', make_kern_copy='appr',
-    current_noise = 'appr', countingleads = 'funcp',# added by Simon #simon
+    current_noise = 'appr', countingleads = 'funcp',
     # FunctionProperties
     kpnt='funcp', symq='appr', norm_row='appr', solmethod='appr',
     itype='appr', dqawc_limit='funcp',
@@ -100,8 +100,8 @@ class BuilderBase(object):
                  kerntype='Pauli', symq=True, norm_row=0, solmethod=None,
                  itype=0, dqawc_limit=10000, mfreeq=False, phi0_init=None,
                  mtype_qd=complex, mtype_leads=complex,
-                 symmetry=None, herm_hs=True, herm_c=False, m_less_n=True
-                ,countingleads=[0], off_diag_corrections=True #simon
+                 symmetry=None, herm_hs=True, herm_c=False, m_less_n=True,
+                countingleads=[0], off_diag_corrections=True
                 ):
 
         self._init_copy_data(locals())
@@ -121,7 +121,7 @@ class BuilderBase(object):
         data.indexing, data.symmetry = validate_indexing(data.indexing,
                                           data.symmetry,
                                           data.kerntype)
-        data.countingleads = validate_countingleads(data.countingleads) #simon
+        data.countingleads = validate_countingleads(data.countingleads)
 
     def _init_set_globals(self):
         self.globals = globals()
@@ -142,7 +142,7 @@ class BuilderBase(object):
                                         mfreeq=data.mfreeq, phi0_init=data.phi0_init,
                                         mtype_qd=data.mtype_qd, mtype_leads=data.mtype_leads,
                                         kpnt=data.kpnt, dband=data.dband,
-                                        countingleads=data.countingleads #simon
+                                        countingleads=data.countingleads
                                        )
 
         icn = self.Approach.indexing_class_name
@@ -235,7 +235,7 @@ class BuilderBase(object):
             self.leads.add(tleads, mulst, tlst, dlst)
 
     def change(self, hsingle=None, coulomb=None, tleads=None, mulst=None, tlst=None, dlst=None
-              ,countingleads=None #simon
+              ,countingleads=None
               ):
         """
         Changes the values of the specified dictionaries and correspondingly redefines
@@ -251,7 +251,7 @@ class BuilderBase(object):
             self.qd.change(hsingle, coulomb)
         if not (tleads is None and mulst is None and tlst is None and dlst is None):
             self.leads.change(tleads, mulst, tlst, dlst)
-        if not (countingleads is None): #simon
+        if not (countingleads is None):
             self.funcp.countingleads=validate_countingleads(countingleads)
 
     def get_phi0(self, b, bp):
