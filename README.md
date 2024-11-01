@@ -1,6 +1,15 @@
 QmeQ: Quantum master equation for Quantum dot transport calculations
 ====================================================================
 
+**NOTE: This is an extended version of QmeQ to perform noise calculations via counting statistics** 
+
+Changes to the base QmeQ include the ability to calculate the second current
+cumulant via counting statistic for the first order approaches and the RTD approach.
+Note, that the changes in the first order approaches are directly in the approaches
+(subject to change), while in the RTD case RTDnoise was added as a separate approach.
+
+====================================================================
+
 QmeQ is an open-source Python package for calculations of transport through
 quantum  dot devices. The so-called Anderson-type models are used to describe
 the quantum dot device, where quantum dots are coupled to the leads by
