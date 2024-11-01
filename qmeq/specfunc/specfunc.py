@@ -52,7 +52,7 @@ def func_pauli(Ecb, mu, T, Dm, Dp, itype):
 
 def fermi_lpm(lam, mu, T, Dm, Dp, itype):
     """
-    Function used when generating lpm master equation kernel.
+    Function used when generating Counting kernels for master equation.
 
     Parameters
     ----------
@@ -560,8 +560,8 @@ def integralD(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         return -1j*ret
 
 def integralD_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
-    """ Evaluates the 'direct' integral in the RTD approach. Picks the appropriate way
-    of evaluating the integral based on the temperatures. Assumes that the wide band limits is valid.
+    """ Evaluates the 'direct' integral in the RTD approach. Always uses the general way of evaluating the integral
+     i.e. Matsubara sum. Assumes that the wide band limits is valid.
 
     Parameters
     ----------
@@ -596,14 +596,6 @@ def integralD_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu
     double
         The integral value
     """
-    # TMIN = 1e-5
-    # if abs(T2-T1) < TMIN and not ImGamma:
-        # lambda1 = (E1 - eta0 * mu1) / T1
-        # lambda2 = (E2 - eta0 * mu1 - eta1 * mu2) / T1
-        # lambda3 = (E3 - eta0 * mu1) /T1
-        # ret = _D_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        # return ret*np.pi/T1
-    # else:
     ret = _D_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0*mu1, eta1*mu2, D/2, D/2, b_and_R)
     if lpm_imaginary_2nd:
         return -1j*ret
@@ -660,8 +652,8 @@ def integralX(p1, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
         return -1j*ret
 
 def integralX_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu2, D, b_and_R, ImGamma):
-    """ Evaluates the 'exchange' integral in the RTD approach. Picks the appropriate way
-    of evaluating the integral based on the temperatures. Assumes that the wide band limit is valid.
+    """ Evaluates the 'exchange' integral in the RTD approach. Always uses the general way of evaluating the integral
+     i.e. Matsubara sum. Assumes that the wide band limit is valid.
 
     Parameters
     ----------
@@ -696,15 +688,6 @@ def integralX_lpm(lpm_imaginary_2nd, p1, eta0, eta1, E1, E2, E3, T1, T2, mu1, mu
     double
         The integral value
     """
-
-    # TMIN = 1e-10
-    # if abs(T2-T1) < TMIN and not ImGamma:
-        # lambda1 = (E1 - eta0 * mu1) / T1
-        # lambda2 = (E2 - eta0 * mu1 - eta1 * mu2) / T1
-        # lambda3 = (E3 - eta1 * mu2) / T1
-        # ret = _X_integral_equal_T(p1, 1, lambda3, lambda2,  lambda1, D/2/T1, D/2/T1)
-        # return ret*np.pi/T1
-    # else:
     ret = _X_integral(1, p1, -E1, -E2, -E3, T1, T2, eta0*mu1, eta1*mu2, D/2, D/2, b_and_R)
     if lpm_imaginary_2nd:
         return -1j*ret
@@ -1008,4 +991,3 @@ def BW_Ozaki(D):
 
     b_and_R = Ozaki(N * 2 + 2)
     return b_and_R
-
