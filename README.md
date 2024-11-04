@@ -8,10 +8,16 @@ cumulant via counting statistic for the first order approaches and the RTD appro
 Note, that the changes in the first order approaches are directly in the approaches
 (subject to change), while in the RTD case RTDnoise was added as a separate approach.
 
-The counting leads can be chosen by passing an iterable with the lead indices to the builder when creating the system, e.g. `countingleads=[0,2]` when counting at leads 0 and 2.
-Currently , in the first order approaches and RTDnoise `system.current_noise` is how to get the current and noise via counting statistics.
-It is an array with two entries, the first is the current and the second is the noise at the chosen counting leads.
-In the RTDnoise approach there are additionally `system.appr.current_noise_first` and `system.appr.current_noise_o4trunc` that contain the first order current and so-called *O(4) trunc.* current (expansion of the current to 4th order in $\Gamma$ not $H_T$).
+The counting leads can be chosen by passing an iterable with the lead indices to the
+builder when creating the system, e.g. `countingleads=[0,2]` when counting at leads 
+0 and 2. Currently , in the first order approaches and RTDnoise `system.current_noise`
+is how to get the current and noise via counting statistics. It is an array with two 
+entries, the first is the current and the second is the noise at the chosen counting 
+leads. In the RTDnoise approach there are additionally `system.appr.current_noise_first`
+and `system.appr.current_noise_o4trunc` that contain the first order current and 
+so-called *O(4) trunc.* current (expansion of the current to 4th order in $\Gamma$ 
+not $H_T$).
+An example of how to use this can be found [here](https://github.com/si8881wo/qmeq-noise-example).
 
 ====================================================================
 
