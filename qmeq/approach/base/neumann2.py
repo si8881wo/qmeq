@@ -1,7 +1,7 @@
 """Module containing python functions, which solve 2vN approach integral equations."""
 
 import numpy as np
-from scipy import pi
+from numpy import pi
 import itertools
 
 from ...wrappers.mytypes import complexnp
