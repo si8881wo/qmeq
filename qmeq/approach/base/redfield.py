@@ -180,9 +180,8 @@ class ApproachRedfield(Approach):
         
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
-        # pseudoinverse
-        eps = 1e-10
-        R   = Q @ np.linalg.inv(1j*eps*np.eye(ndm0r) + kern) @ Q 
+        # pseudoinverseo
+        R   = Q @ np.linalg.pinv(kern) @ Q 
         
         # current and noise
         Jp  = 1j*Lp - 1j*Lm

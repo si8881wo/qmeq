@@ -202,7 +202,6 @@ class ApproachLindblad(Approach):
         # projector
         Q = (np.eye(np.size(P)) - P @ O)
         # pseudoinverse
-        eps = 1e-10
         R   = Q @ np.linalg.pinv(kern) @ Q 
         
         # current and noise
